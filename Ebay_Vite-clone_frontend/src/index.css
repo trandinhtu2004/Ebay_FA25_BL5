@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Cấu hình màu eBay cho v4 */
+@theme {
+  --color-ebay-red: #e53238;
+  --color-ebay-blue: #0064d2;
+  --color-ebay-yellow: #f5af02;
+  --color-ebay-green: #86b817;
+  --color-ebay-gray: #e5e5e5;
+}
+
+body {
+  background-color: #f7f7f7;
+}
