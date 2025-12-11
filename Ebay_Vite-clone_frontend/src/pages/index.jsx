@@ -1,27 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BsBell, BsCart2, BsSearch, BsHeart } from 'react-icons/bs';
-import { AiOutlineDown } from 'react-icons/ai';
-
-// Mock Data cho sản phẩm
-const products = [
-  { id: 1, title: 'Sony PlayStation 5 Console', price: 499.00, img: 'https://placehold.co/200x200?text=PS5', shipping: 'Free shipping' },
-  { id: 2, title: 'iPhone 14 Pro Max 256GB', price: 1099.00, img: 'https://placehold.co/200x200?text=iPhone', shipping: 'Free shipping' },
-  { id: 3, title: 'Nike Air Jordan 1 Retro', price: 180.00, img: 'https://placehold.co/200x200?text=Jordan', shipping: '$15.00 shipping' },
-  { id: 4, title: 'Vintage Rolex Submariner', price: 12500.00, img: 'https://placehold.co/200x200?text=Rolex', shipping: 'Free shipping' },
-  { id: 5, title: 'Canon EOS R5 Body', price: 3899.00, img: 'https://placehold.co/200x200?text=Canon', shipping: 'Free shipping' },
-  { id: 6, title: 'MacBook Pro M2 14-inch', price: 1999.00, img: 'https://placehold.co/200x200?text=MacBook', shipping: 'Free shipping' },
-];
-
-const categories = [
-  "Saved", "Motors", "Electronics", "Collectibles", "Home & Garden", "Fashion", "Toys", "Sporting Goods", "Business & Industrial", "Jewelry & Watches", "eBay Refurbished"
-];
+import { AiOutlineDown, AiOutlineLeft, AiOutlineRight } from 'react-icons/ai';
+import Header from '../components/Header';
+import { Link, useNavigate } from 'react-router-dom';
+// Cấu hình URL Backend (Thay đổi port nếu backend của bạn chạy port khác)
+const API_URL = 'http://localhost:5001/api/products'; 
 
 function Index() {
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // State quản lý dữ liệu
+  const [allProducts, setAllProducts] = useState([]);
+  const [dailyDeals, setDailyDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  // State phân trang cho phần "All Products"
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 18; // 3 hàng x 6 cột
+
+  // Fetch dữ liệu từ Backend khi load trang
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        const uniqueCats = [...new Set(data.map(item => item.category?.name || 'Other'))];
+        setCategories(uniqueCats);
+        // 1. Lưu toàn bộ sản phẩm
+        setAllProducts(data);
+
+        // 2. Random 6 sản phẩm cho Daily Deals
+        const shuffled = [...data].sort(() => 0.5 - Math.random());
+        setDailyDeals(shuffled.slice(0, 6));
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Không thể tải sản phẩm. Vui lòng kiểm tra Backend.");
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Logic phân trang Client-side
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAllProducts = allProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(allProducts.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll xuống phần All Products khi chuyển trang
+    document.getElementById('all-products-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Helper render Product Card để tái sử dụng
+  const renderProductCard = (product) => (
+    <div key={product._id} className="group cursor-pointer">
+      <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-200">
+        {/* Lấy ảnh đầu tiên trong mảng images, nếu không có dùng placeholder */}
+        <img 
+          src={product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/200x200?text=No+Image'} 
+          alt={product.title} 
+          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+        />
+        <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow hover:text-ebay-red opacity-0 group-hover:opacity-100 transition">
+          <BsHeart />
+        </button>
+      </div>
+      <h3 className="text-sm hover:underline hover:text-blue-700 line-clamp-2 h-10 mb-1 leading-snug text-gray-800">
+        {product.title}
+      </h3>
+      <div className="font-bold text-lg text-gray-900">${product.price.toLocaleString()}</div>
+      {/* Giả lập thông tin shipping vì DB chưa có trường này, bạn có thể thêm logic sau */}
+      <div className="text-xs text-gray-500">Free shipping</div> 
+    </div>
+  );
+
+  
 
   return (
     <div className="font-sans text-gray-800 bg-white min-h-screen">
-      {/* --- TOP BAR --- */}
+
+      <Header categories={categories} />
+      {/* --- TOP BAR ---
       <div className="border-b border-gray-200 text-xs px-4 py-1 hidden md:block">
         <div className="max-w-[1280px] mx-auto flex justify-between items-center">
           <div className="flex gap-4">
@@ -42,25 +111,21 @@ function Index() {
             </div>
           </div>
         </div>
-      </div>
+      </div> 
 
-      {/* --- MAIN HEADER --- */}
       <div className="max-w-[1280px] mx-auto px-4 py-4 border-b border-gray-200">
         <div className="flex items-center gap-4">
-          {/* Logo */}
-          <a href="#" className="text-4xl font-bold tracking-tighter shrink-0 cursor-pointer">
+          <a href="/" className="text-4xl font-bold tracking-tighter shrink-0 cursor-pointer">
             <span className="text-ebay-red">e</span>
             <span className="text-ebay-blue">b</span>
             <span className="text-ebay-yellow">a</span>
             <span className="text-ebay-green">y</span>
           </a>
 
-          {/* Shop by category */}
           <div className="hidden md:flex items-center gap-1 text-sm text-gray-600 cursor-pointer whitespace-nowrap hover:text-blue-600">
             Shop by category <AiOutlineDown size={10} />
           </div>
 
-          {/* Search Bar */}
           <div className="flex-1 flex h-10 md:h-12 border-2 border-black rounded overflow-hidden relative">
             <div className="flex items-center px-3 gap-2 w-full">
               <BsSearch className="text-gray-400" />
@@ -72,7 +137,6 @@ function Index() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            {/* Category Select inside Search */}
             <select className="border-l border-gray-300 text-sm px-4 bg-white hidden md:block outline-none text-gray-600 cursor-pointer max-w-[150px]">
               <option>All Categories</option>
               <option>Electronics</option>
@@ -80,23 +144,24 @@ function Index() {
             </select>
           </div>
           
-          {/* Search Button */}
           <button className="bg-ebay-blue text-white px-8 md:px-12 h-10 md:h-12 font-semibold text-lg rounded hover:bg-blue-700 transition">
             Search
           </button>
 
-          {/* Advanced Search Link */}
           <a href="#" className="text-xs text-gray-500 whitespace-nowrap hidden lg:block hover:underline">Advanced</a>
         </div>
       </div>
-
-      {/* --- CATEGORY NAVIGATION --- */}
-      <div className="max-w-[1280px] mx-auto px-4 py-2 border-b border-gray-100 hidden md:block">
-        <ul className="flex justify-center gap-6 text-xs lg:text-sm text-gray-600">
+     
+        */}
+     
+      <div className="max-w-[1280px] mx-auto px-4 py-2 border-b border-gray-100 hidden md:block overflow-x-auto">
+        <ul className="flex justify-center gap-6 text-xs lg:text-sm text-gray-600 whitespace-nowrap">
+          <li className="hover:text-ebay-blue hover:underline cursor-pointer group relative">
+            <Link to="/all-products">Explore All</Link>
+          </li>
           {categories.map((cat, index) => (
             <li key={index} className="hover:text-ebay-blue hover:underline cursor-pointer group relative">
-              {cat}
-              {cat === "Saved" && <span className="ml-1 text-ebay-red">♥</span>}
+              <Link to={`/all-products?category=${encodeURIComponent(cat)}`}>{cat}</Link>
             </li>
           ))}
         </ul>
@@ -105,7 +170,6 @@ function Index() {
       {/* --- HERO SECTION --- */}
       <div className="max-w-[1280px] mx-auto px-4 py-6">
         <div className="bg-gray-100 rounded-lg overflow-hidden flex flex-col md:flex-row h-auto md:h-[350px] relative hover:shadow-lg transition cursor-pointer">
-          {/* Text Content */}
           <div className="p-8 md:p-12 flex flex-col justify-center items-start w-full md:w-1/2 z-10">
             <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900 leading-tight">
               Score the tech <br /> you need
@@ -115,7 +179,6 @@ function Index() {
               Shop now →
             </button>
           </div>
-          {/* Image Placeholder */}
           <div className="w-full md:w-1/2 h-48 md:h-full bg-yellow-200 relative">
              <img 
                src="https://placehold.co/800x400/f5af02/333333?text=Big+Sale+Banner" 
@@ -126,36 +189,87 @@ function Index() {
         </div>
       </div>
 
-      {/* --- DAILY DEALS / PRODUCT GRID --- */}
+      {/* --- CONTENT AREA --- */}
       <div className="max-w-[1280px] mx-auto px-4 py-8">
-        <div className="flex justify-between items-end mb-6">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            Daily Deals 
-            <span className="text-sm font-normal text-blue-700 cursor-pointer hover:underline">See all</span>
-          </h2>
-        </div>
+        
+        {loading && <div className="text-center py-10">Loading products...</div>}
+        {error && <div className="text-center py-10 text-red-600">{error}</div>}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {products.map((product) => (
-            <div key={product.id} className="group cursor-pointer">
-              <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                <img 
-                  src={product.img} 
-                  alt={product.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                />
-                <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow hover:text-ebay-red opacity-0 group-hover:opacity-100 transition">
-                  <BsHeart />
-                </button>
+        {!loading && !error && (
+          <>
+            {/* 1. DAILY DEALS (RANDOM 6 ITEMS) */}
+            <div className="mb-12">
+              <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
+                  Daily Deals 
+                  <span className="text-sm font-normal text-blue-700 cursor-pointer hover:underline ml-2">See all</span>
+                </h2>
               </div>
-              <h3 className="text-sm hover:underline hover:text-blue-700 line-clamp-2 h-10 mb-1 leading-snug">
-                {product.title}
-              </h3>
-              <div className="font-bold text-lg">${product.price.toFixed(2)}</div>
-              <div className="text-xs text-gray-500">{product.shipping}</div>
+
+              {dailyDeals.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {dailyDeals.map(product => renderProductCard(product))}
+                </div>
+              ) : (
+                <p>No daily deals available today.</p>
+              )}
             </div>
-          ))}
-        </div>
+
+            {/* 2. ALL PRODUCTS (PAGINATION: 3 ROWS x 6 COLS) */}
+            <div id="all-products-section">
+              <div className="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                <h2 className="text-2xl font-bold text-gray-900">Explore All Products</h2>
+                <span className="text-sm text-gray-500">
+                  Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, allProducts.length)} of {allProducts.length}
+                </span>
+              </div>
+
+              {currentAllProducts.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-y-8 gap-x-4">
+                  {currentAllProducts.map(product => renderProductCard(product))}
+                </div>
+              ) : (
+                 <p>No products found.</p>
+              )}
+
+              {/* PAGINATION CONTROLS */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-10">
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded border ${currentPage === 1 ? 'text-gray-300 border-gray-200' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                  >
+                    <AiOutlineLeft />
+                  </button>
+                  
+                  {/* Page Numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-8 h-8 rounded border text-sm font-bold transition-colors ${
+                        currentPage === page 
+                          ? 'bg-gray-900 text-white border-gray-900' 
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 rounded border ${currentPage === totalPages ? 'text-gray-300 border-gray-200' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                  >
+                    <AiOutlineRight />
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* --- FOOTER SIMPLIFIED --- */}
