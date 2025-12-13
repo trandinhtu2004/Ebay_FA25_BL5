@@ -4,50 +4,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BsBell, BsCart2, BsSearch } from 'react-icons/bs';
 import { AiOutlineDown } from 'react-icons/ai';
 import {toast } from 'react-toastify';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import Cart from './../pages/Cart';
 const Header = ({ categories = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { cartItemCount, hasNewNotification, clearNotification } = useCart();
+  const { user, logout, isAuthenticated } = useAuth();
+ 
+ 
   const handleSearch = () => {
     // Chuyển hướng sang trang filter với từ khóa tìm kiếm
     navigate(`/all-products?search=${encodeURIComponent(searchTerm)}`);
   };
-
-const handleLogout = () => {
-    try{
-    localStorage.removeItem('token');
-    localStorage.removeItem('userInfo');
-    localStorage.removeItem('loginTime');
-    setUser(null);
-    navigate('/');
-    toast.success('Logout successful!')
-    } catch (err){
-        toast.error('Logout failed!');
-        console.error(err);
-    }
-  };
-
-useEffect(() => {
-    const checkLoginStatus = () => {
-      const token = localStorage.getItem('token');
-      const userInfo = localStorage.getItem('userInfo');
-      const loginTime = localStorage.getItem('loginTime');
-      const ONE_DAY = 24 * 60 * 60 * 1000; // 1 ngày tính bằng mili giây
-
-      if (token && userInfo && loginTime) {
-        const now = Date.now();
-        // Kiểm tra xem đã quá 1 ngày chưa
-        if (now - parseInt(loginTime) > ONE_DAY) {
-          handleLogout(); // Hết hạn thì logout
-        } else {
-          // Còn hạn thì set user vào state để hiển thị
-          setUser(JSON.parse(userInfo));
-        }
-      }
-    };
-
-    checkLoginStatus();
-  }, []);
 
   
 
@@ -68,7 +38,7 @@ useEffect(() => {
                   {user.username}
                 </Link>
                 <span className="text-gray-300">|</span>
-                <button onClick={handleLogout} className="text-blue-700 hover:underline cursor-pointer">
+                <button onClick={() => { logout(); navigate('/'); toast.success('Logout successful!'); }} className="text-blue-700 hover:underline cursor-pointer">
                   Sign out
                 </button>
               </div>
@@ -84,8 +54,26 @@ useEffect(() => {
             <a href="#" className="hover:underline">Sell</a>
             <a href="#" className="hover:underline flex items-center gap-1">Watchlist <AiOutlineDown /></a>
             <a href="#" className="hover:underline flex items-center gap-1">My eBay <AiOutlineDown /></a>
-            <div className="relative"><BsBell className="text-lg cursor-pointer" /></div>
-            <div className="relative"><BsCart2 className="text-lg cursor-pointer" /></div>
+            <div className="relative group">
+              <BsBell 
+                className="text-lg cursor-pointer hover:text-blue-700 transition" 
+                onClick={clearNotification} // Click vào để tắt chấm đỏ
+              />
+              
+              {/* CHẤM ĐỎ: Chỉ hiện khi có thông báo mới */}
+              {hasNewNotification && (
+                <span className="absolute -top-1 -right-0.5 h-2.5 w-2.5 bg-red-600 rounded-full border-2 border-white"></span>
+              )}
+            </div>
+            <div className="relative">
+              <Link to="/cart">
+              <BsCart2 className="text-lg cursor-pointer" />
+              </Link>
+              {/* CHẤM ĐỎ: Chỉ hiện khi có sản phẩm trong giỏ */}
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-0.5 h-2.5 w-2.5 bg-red-600 rounded-full border-2 border-white"></span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Header from '../components/Header';
 import FloatingInput from '../components/FloatingInput'; // Tận dụng component cũ
+import { useAuth } from '../context/AuthContext';
 
 const API_URL = 'http://localhost:5001/api/users';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, token, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('info'); // info | password | address
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // State cho thông tin cá nhân
@@ -33,26 +34,24 @@ const ProfilePage = () => {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({ name: '', address: '', phone: '' });
 
-  // Load user từ localStorage
+  // Kiểm tra authentication
   useEffect(() => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (!userInfo) {
+    if (!isAuthenticated) {
       navigate('/login');
       return;
     }
-    const parsedUser = JSON.parse(userInfo);
-    setUser(parsedUser);
-    setProfileData({
-      username: parsedUser.username || '',
-      avatarURL: parsedUser.avatarURL || ''
-    });
-  }, [navigate]);
+    if (user) {
+      setProfileData({
+        username: user.username || '',
+        avatarURL: user.avatarURL || ''
+      });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // --- XỬ LÝ CẬP NHẬT PROFILE ---
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const token = localStorage.getItem('token');
 
     try {
       const response = await fetch(`${API_URL}/profile`, {
@@ -68,14 +67,9 @@ const ProfilePage = () => {
 
       if (!response.ok) throw new Error(data.message || 'Lỗi cập nhật');
 
-      // Cập nhật thành công -> Lưu lại vào localStorage để Header cập nhật
-      const newUserInfo = { ...user, ...data }; // data trả về từ backend (user mới)
-      localStorage.setItem('userInfo', JSON.stringify(newUserInfo));
-      setUser(newUserInfo);
-      toast.success('Cập nhật hồ sơ thành công!');
-      
-      // Reload nhẹ để Header hiển thị data mới ngay lập tức
-      window.location.reload(); 
+      // Cập nhật user trong AuthContext
+      updateUser(data); // data là user mới từ backend
+      toast.success('Cập nhật hồ sơ thành công!'); 
 
     } catch (error) {
       toast.error(error.message);

@@ -64,20 +64,25 @@ function Index() {
   // Helper render Product Card để tái sử dụng
   const renderProductCard = (product) => (
     <div key={product._id} className="group cursor-pointer">
+      
       <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-200">
         {/* Lấy ảnh đầu tiên trong mảng images, nếu không có dùng placeholder */}
+        <Link to={`/product/${product._id}`} key={product._id} className="group cursor-pointer">
         <img 
           src={product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/200x200?text=No+Image'} 
           alt={product.title} 
           className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
         />
+        </Link>
         <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow hover:text-ebay-red opacity-0 group-hover:opacity-100 transition">
           <BsHeart />
         </button>
       </div>
+       <Link to={`/product/${product._id}`} key={product._id} className="group cursor-pointer">
       <h3 className="text-sm hover:underline hover:text-blue-700 line-clamp-2 h-10 mb-1 leading-snug text-gray-800">
         {product.title}
       </h3>
+      </Link>
       <div className="font-bold text-lg text-gray-900">${product.price.toLocaleString()}</div>
       {/* Giả lập thông tin shipping vì DB chưa có trường này, bạn có thể thêm logic sau */}
       <div className="text-xs text-gray-500">Free shipping</div> 
