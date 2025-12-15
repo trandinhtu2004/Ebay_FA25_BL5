@@ -1,11 +1,12 @@
 // controllers/return.controller.js
 const ReturnRequest = require('../models/ReturnRequest.model');
 const Order = require('../models/Order.model');
+const Product = require('../models/Product.model');
 const { createNotificationInternal } = require('./notification.controller');
 // @desc    Tạo yêu cầu hoàn trả mới
 // @route   POST /api/returns
 // @access  Private
-exports.createReturnRequest = async (req, res) => {
+exports.createReturnOrderRequest = async (req, res) => {
     const { orderId, productId, reason } = req.body;
     const userId = req.user._id;
 
@@ -44,7 +45,63 @@ exports.createReturnRequest = async (req, res) => {
     }
 };
 
-// @desc    Lấy lịch sử yêu cầu hoàn trả của user
+// // @desc    Xử lý hoàn trả sản phẩm đơn lẻ từ yêu cầu (Admin)
+// // @route   PUT /api/returns/process/:id
+// // @access  Private/Admin
+// exports.returnASingleProductFromOrderRequest = async (req, res) => {
+//     const requestId = req.params.id;
+
+//     try {
+//         // 1. Tìm yêu cầu hoàn trả
+//         const returnRequest = await ReturnRequest.findById(requestId)
+//             .populate('order')
+//             .populate('product')
+//             .populate('user');
+
+//         if (!returnRequest) {
+//             return res.status(404).json({ message: 'Không tìm thấy yêu cầu hoàn trả.' });
+//         }
+
+//         // 2. Kiểm tra trạng thái (chỉ xử lý nếu đã được duyệt)
+//         if (returnRequest.status !== 'approved') {
+//             return res.status(400).json({ message: 'Yêu cầu hoàn trả chưa được duyệt.' });
+//         }
+
+//         // 3. Cập nhật tồn kho sản phẩm (nếu có sản phẩm cụ thể)
+//         if (returnRequest.product) {
+//             // Tìm số lượng sản phẩm trong đơn hàng
+//             const orderItem = returnRequest.order.orderItems.find(item => 
+//                 item.product.toString() === returnRequest.product._id.toString()
+//             );
+
+//             if (orderItem) {
+//                 // Tăng tồn kho
+//                 await Product.findByIdAndUpdate(returnRequest.product._id, {
+//                     $inc: { stock: orderItem.quantity }
+//                 });
+//             }
+//         }
+
+//         // 4. Cập nhật trạng thái yêu cầu hoàn trả thành 'completed'
+//         returnRequest.status = 'completed';
+//         returnRequest.resolutionNotes = req.body.resolutionNotes || 'Sản phẩm đã được hoàn trả thành công.';
+//         await returnRequest.save();
+
+//         // 5. Gửi thông báo cho người dùng
+//         const message = `Yêu cầu hoàn trả sản phẩm "${returnRequest.product ? returnRequest.product.title : 'đơn hàng'}" đã được xử lý thành công.`;
+//         const link = `/return-history`;
+//         await createNotificationInternal(returnRequest.user._id.toString(), message, link, req);
+
+//         res.status(200).json({
+//             message: 'Hoàn trả sản phẩm thành công.',
+//             returnRequest
+//         });
+
+//     } catch (error) {
+//         console.error('Lỗi xử lý hoàn trả sản phẩm:', error);
+//         res.status(500).json({ message: 'Lỗi máy chủ.' });
+//     }
+// };
 // @route   GET /api/returns/myrequests
 // @access  Private
 exports.getMyReturnRequests = async (req, res) => {

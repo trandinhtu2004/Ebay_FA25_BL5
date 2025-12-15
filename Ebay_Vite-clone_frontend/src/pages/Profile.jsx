@@ -7,8 +7,12 @@ import Header from "../components/Header";
 import FloatingInput from "../components/FloatingInput"; // Tận dụng component cũ
 import { useAuth } from "../context/AuthContext";
 import AddressForm from "../components/AddressForm";
-const API_URL = "http://localhost:5001/api/users";
 const API_ADDRESS_URL = "/api/address";
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
+const USER_API = `${API_URL}/users`;
+const ADDRESS_API = `${API_URL}/address`;
+
+
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, token, updateUser } = useAuth();
@@ -32,7 +36,6 @@ const ProfilePage = () => {
   const [addresses, setAddresses] = useState([]);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [currentAddress, setCurrentAddress] = useState(null);
-  // Kiểm tra authentication
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
@@ -118,6 +121,7 @@ const ProfilePage = () => {
     toast.success(currentAddress ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ mới thành công!');
   };
 
+
   // --- XỬ LÝ CẬP NHẬT PROFILE ---
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -140,8 +144,10 @@ const ProfilePage = () => {
       // Cập nhật user trong AuthContext
       updateUser(data); // data là user mới từ backend
       toast.success("Cập nhật hồ sơ thành công!");
+
     } catch (error) {
-      toast.error(error.message);
+      const errorMessage = error.response?.data?.message || 'Lỗi cập nhật';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -160,11 +166,11 @@ const ProfilePage = () => {
   };
 
 
+
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-[#191919]">
-      {/* Header dùng lại, không cần truyền categories nếu chỉ muốn hiện trang tĩnh */}
       <Header />
 
       <div className="max-w-[1000px] mx-auto px-4 py-8">
@@ -246,6 +252,7 @@ const ProfilePage = () => {
                     <FloatingInput
                       label="Username"
                       value={profileData.username}
+
                       onChange={(e) =>
                         setProfileData({
                           ...profileData,
@@ -267,6 +274,7 @@ const ProfilePage = () => {
                       className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 w-max mt-2"
                     >
                       {loading ? "Updating..." : "Save Changes"}
+
                     </button>
                   </form>
                 </div>
@@ -275,47 +283,34 @@ const ProfilePage = () => {
               {/* TAB 2: PASSWORD */}
               {activeTab === "password" && (
                 <div>
-                  <h2 className="text-xl font-bold mb-4 pb-2 border-b">
-                    Change Password
-                  </h2>
-                  <form
-                    onSubmit={handleChangePassword}
-                    className="max-w-md flex flex-col gap-4"
-                  >
-                    <FloatingInput
-                      type="password"
-                      label="Current Password"
+
+                  <h2 className="text-xl font-bold mb-4 pb-2 border-b">Change Password</h2>
+                  <form onSubmit={handleChangePassword} className="max-w-md flex flex-col gap-4">
+                    <FloatingInput 
+                      type="password" 
+                      label="Current Password" 
                       value={passData.currentPassword}
-                      onChange={(e) =>
-                        setPassData({
-                          ...passData,
-                          currentPassword: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setPassData({...passData, currentPassword: e.target.value})}
+                      required
                     />
-                    <FloatingInput
-                      type="password"
-                      label="New Password"
+                    <FloatingInput 
+                      type="password" 
+                      label="New Password" 
                       value={passData.newPassword}
-                      onChange={(e) =>
-                        setPassData({
-                          ...passData,
-                          newPassword: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setPassData({...passData, newPassword: e.target.value})}
+                      required
                     />
-                    <FloatingInput
-                      type="password"
-                      label="Confirm New Password"
+                    <FloatingInput 
+                      type="password" 
+                      label="Confirm New Password" 
                       value={passData.confirmPassword}
-                      onChange={(e) =>
-                        setPassData({
-                          ...passData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setPassData({...passData, confirmPassword: e.target.value})}
+                      required
                     />
-                    <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 w-max mt-2">
+                     <button 
+                       type="submit"
+                       className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 w-max mt-2"
+                     >
                       Update Password
                     </button>
                   </form>
@@ -378,6 +373,7 @@ const ProfilePage = () => {
                       ))}
                     </div>
                   ))}
+
                 </div>
               )}
 

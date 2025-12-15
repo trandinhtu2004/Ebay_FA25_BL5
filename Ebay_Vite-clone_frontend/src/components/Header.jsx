@@ -7,6 +7,7 @@ import {toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import Cart from './../pages/Cart';
+import NotificationBell from './NotificationBell';
 const Header = ({ categories = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
@@ -50,31 +51,44 @@ const Header = ({ categories = [] }) => {
             <a href="#" className="hover:underline">Daily Deals</a>
             <a href="#" className="hover:underline">Help & Contact</a>
           </div>
-          <div className="flex gap-6">
-            <a href="#" className="hover:underline">Sell</a>
-            <a href="#" className="hover:underline flex items-center gap-1">Watchlist <AiOutlineDown /></a>
-            <a href="#" className="hover:underline flex items-center gap-1">My eBay <AiOutlineDown /></a>
-            <div className="relative group">
-              <BsBell 
-                className="text-lg cursor-pointer hover:text-blue-700 transition" 
-                onClick={clearNotification} // Click vào để tắt chấm đỏ
-              />
-              
-              {/* CHẤM ĐỎ: Chỉ hiện khi có thông báo mới */}
-              {hasNewNotification && (
-                <span className="absolute -top-1 -right-0.5 h-2.5 w-2.5 bg-red-600 rounded-full border-2 border-white"></span>
-              )}
-            </div>
-            <div className="relative">
-              <Link to="/cart">
-              <BsCart2 className="text-lg cursor-pointer" />
-              </Link>
-              {/* CHẤM ĐỎ: Chỉ hiện khi có sản phẩm trong giỏ */}
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-0.5 h-2.5 w-2.5 bg-red-600 rounded-full border-2 border-white"></span>
-              )}
-            </div>
-          </div>
+          <div className="flex items-center gap-6 text-[#333]"> 
+  
+  {/* Link Sell */}
+  <a href="#" className="text-xs sm:text-sm hover:underline hover:text-blue-700">
+    Sell
+  </a>
+
+  {/* Link Watchlist */}
+  <a href="#" className="flex items-center gap-1 text-xs sm:text-sm hover:underline hover:text-blue-700">
+    Watchlist <AiOutlineDown size={10} /> {/* Chỉnh size icon nhỏ lại cho cân với text */}
+  </a>
+
+  {/* Link My eBay */}
+  <Link to="/my-ebay" className="flex items-center gap-1 text-xs sm:text-sm hover:underline hover:text-blue-700">
+    My eBay <AiOutlineDown size={10} />
+  </Link>
+
+  {/* Notification Bell: Bọc trong div flex để căn chỉnh nếu component con có margin lạ */}
+  <div className="flex items-center">
+    <NotificationBell />
+  </div>
+
+  {/* Cart Icon */}
+  <div className="relative flex items-center">
+    <Link to="/cart" className="flex items-center"> {/* Thêm flex center cho Link */}
+      <BsCart2 className="text-xl cursor-pointer hover:text-blue-700 transition" /> {/* Tăng size icon lên một chút (xl) cho cân với text */}
+    </Link>
+    
+    {/* Chấm đỏ thông báo */}
+    {cartItemCount > 0 && (
+      <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-600 rounded-full border-2 border-white text-[9px] font-bold text-white flex items-center justify-center">
+        {/* Nếu muốn hiện số lượng thì bỏ comment dòng dưới, không thì để chấm tròn */}
+        {/* {cartItemCount} */} 
+      </span>
+    )}
+  </div>
+
+</div>
         </div>
       </div>
 
