@@ -9,6 +9,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import ProductDetail from './pages/ProductDetail';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Cart from './pages/Cart';
+import MyEbayLayout from './Layouts/MyEbayLayout';
+import Summary from './pages/MyEbay/Summary';
+import PurchaseHistory from './pages/MyEbay/PurchaseHistory';
 function App() {
   return (
     <BrowserRouter>
@@ -27,6 +30,16 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/cart" element={<ProtectedRoute><Cart/></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+
+
+        <Route path="/my-ebay" element={<ProtectedRoute><MyEbayLayout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="summary" replace />} />
+              <Route path="summary" element={<ProtectedRoute><Summary /></ProtectedRoute>} />
+              <Route path="purchase-history" element={<ProtectedRoute><PurchaseHistory /></ProtectedRoute>} />
+              
+              {/* Fallback cho các link chưa làm */}
+              <Route path="*" element={<div className="p-10 text-center">Page under construction</div>} />
+            </Route>
       </Routes>
     </BrowserRouter>
   );

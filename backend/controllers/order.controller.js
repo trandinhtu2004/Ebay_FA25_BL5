@@ -200,7 +200,16 @@ exports.createOrder = async (req, res) => {
 // @access  Private
 exports.getMyOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ buyer: req.user._id }).sort({ createdAt: -1 });
+        const orders = await Order.find({ buyer: req.user._id })
+            .populate({
+                path: 'orderItems.product', // Populate thông tin sản phẩm gốc
+                select: 'seller', // Chỉ cần lấy seller
+                populate: {
+                    path: 'seller', // Populate seller từ product
+                    select: 'username' // Lấy username người bán
+                }
+            })
+            .sort({ createdAt: -1 });
         res.status(200).json(orders);
     } catch (error) {
         console.error('Error fetching user order history:', error);
