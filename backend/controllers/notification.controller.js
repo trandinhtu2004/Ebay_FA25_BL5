@@ -14,7 +14,19 @@ exports.getMyNotifications = async (req, res) => {
     }
 };
 
-// @desc    Đánh dấu đã đọc
+exports.markAllAsRead = async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { user: req.user._id, isRead: false },
+            { $set: { isRead: true } }
+        );
+        res.status(200).json({ message: 'Đã đánh dấu tất cả là đã đọc.' });
+    } catch (error) {
+        console.error("Lỗi đánh dấu tất cả đã đọc:", error);
+        res.status(500).json({ message: 'Lỗi máy chủ.' });
+    }
+};
+
 exports.markAsRead = async (req, res) => {
     try {
         const notification = await Notification.findOneAndUpdate(
@@ -32,6 +44,11 @@ exports.markAsRead = async (req, res) => {
     }
 };
 
+//lấy notification từ db ra và cũng cập nhật realtime.
+exports.getAllMyNotificationsFromDbAndRealTime = async (req, res) => {
+
+};
+
 // --- HÀM NỘI BỘ (Chỉ lưu DB và phát sự kiện) ---
 // Hàm này KHÔNG cần 'req'
 exports.createNotificationInternal = async (userId, message, link = '') => {
@@ -40,7 +57,7 @@ exports.createNotificationInternal = async (userId, message, link = '') => {
         // 1. Lưu vào DB
         const notification = new Notification({ user: userId, message, link });
         await notification.save();
-        console.log(`[Notification Service] Đã lưu thông báo vào DB. ID: ${notification._id}`);
+        console.log(`[Notification Service] Đã lưu thông báo vào DB. noti ID: ${notification._id}`);
 
         // 2. Phát sự kiện nội bộ để server.js xử lý
         notificationEmitter.emit('newNotification', {

@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BsSearch, BsChevronDown, BsCheckCircleFill, BsInfoCircleFill, BsHeart, BsArrowReturnLeft, BsBoxes } from 'react-icons/bs';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import {toast} from 'react-toastify';
-import {useNavigate} from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Pagination from '../../components/Pagination';
+
 // URL Backend
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
 
@@ -16,20 +16,25 @@ const PurchaseHistory = () => {
   const [filteredOrders, setFilteredOrders] = useState([]); // Orders sau khi filter
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
   // State để quản lý việc hiển thị More Actions cho từng item (key: "orderId-itemIndex")
   const [openMoreActions, setOpenMoreActions] = useState({});
+  
   // State cho pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5); // Số đơn hàng hiển thị mỗi trang
+  
   // State cho filter
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState(60); // Mặc định: Last 60 Days (0 = All)
   const [showDateDropdown, setShowDateDropdown] = useState(false);
+  
   const { token, isAuthenticated } = useAuth(); // Lấy token để gọi API
-
   const navigate = useNavigate();
-  const {addToCart} = useCart();
+  const { addToCart } = useCart();
+  const location = useLocation(); // Hook để lấy query params
 
+  // 1. Fetch Orders
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -51,11 +56,22 @@ const PurchaseHistory = () => {
     }
   }, [token]);
 
-  // Filter orders dựa trên searchTerm và dateFilter
+  // 2. Xử lý Query Param từ URL (để tự động search khi click từ Notification)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const orderIdParam = searchParams.get('orderId'); // Lấy param 'orderId' từ URL
+
+    if (orderIdParam) {
+      setSearchTerm(orderIdParam); // Tự động điền vào ô tìm kiếm
+      setDateFilter(0); // Reset bộ lọc ngày về "All" để đảm bảo tìm thấy đơn cũ
+    }
+  }, [location.search]);
+
+  // 3. Filter orders dựa trên searchTerm và dateFilter
   useEffect(() => {
     let filtered = [...allOrders];
 
-    // Filter theo số ngày
+    // Filter theo số ngày (chỉ lọc nếu dateFilter > 0)
     if (dateFilter > 0) {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - dateFilter);
@@ -65,7 +81,7 @@ const PurchaseHistory = () => {
       });
     }
 
-    // Filter theo search term
+    // Filter theo search term (OrderId, Product Title, Seller Name, Address)
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(order => {
@@ -136,10 +152,6 @@ const PurchaseHistory = () => {
       }
 
       // TODO: Gọi API thêm vào favorites/watchlist
-      // const response = await axios.post(`${API_URL}/favorites`, { productId }, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      
       toast.success("Đã thêm vào mục yêu thích!");
     } catch (error) {
       toast.error("Có lỗi xảy ra khi thêm vào yêu thích!");
@@ -190,6 +202,7 @@ const PurchaseHistory = () => {
       console.error(error);
     }
   }
+
   const handleAddToCart = async (productId) => {
     try{
         if(!productId){
@@ -254,7 +267,11 @@ const PurchaseHistory = () => {
                 <BsSearch className="absolute left-3 top-2.5 text-gray-500" />
                 {searchTerm && (
                   <button
-                    onClick={() => setSearchTerm('')}
+                    onClick={() => {
+                      setSearchTerm('');
+                      // Nếu đang ở mode search từ URL thì khi clear nên reset cả URL (tùy chọn)
+                      navigate('/my-ebay/purchase-history', { replace: true });
+                    }}
                     className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
                     aria-label="Clear search"
                   >
@@ -262,14 +279,18 @@ const PurchaseHistory = () => {
                   </button>
                 )}
             </div>
+            {/* Nút Search vẫn giữ để user bấm nếu muốn, dù onChange đã trigger filter */}
+            <button hidden={true} className="bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-blue-700 whitespace-nowrap">
+                Search orders
+            </button>
         </div>
       </div>
 
       {/* --- Filter Options --- */}
       <div className="flex justify-between items-center text-sm mb-4 border-b border-gray-100 pb-2">
          <div className="flex gap-1 text-gray-500">
-             <span>Show:</span>
-             <button className="text-blue-700 font-bold flex items-center gap-1 hover:underline">Not hidden <BsChevronDown size={10}/></button>
+             {/* <span>Show:</span>
+             <button className="text-blue-700 font-bold flex items-center gap-1 hover:underline">Not hidden <BsChevronDown size={10}/></button> */}
          </div>
          <div className="flex gap-4 items-center">
              <span className="text-gray-500 hidden sm:inline">See orders from:</span>
@@ -318,6 +339,7 @@ const PurchaseHistory = () => {
                   onClick={() => {
                     setSearchTerm('');
                     setDateFilter(60);
+                    navigate('/my-ebay/purchase-history', { replace: true });
                   }}
                   className="text-blue-700 underline font-bold mt-2"
                 >
@@ -327,7 +349,7 @@ const PurchaseHistory = () => {
         ) : (
             <>
             {currentOrders.map((order,index) => (
-                <div key={index} className="border border-gray-300 rounded-lg overflow-visible bg-white shadow-sm">
+                <div key={order._id} className="border border-gray-300 rounded-lg overflow-visible bg-white shadow-sm">
                     
                     {/* Order Header (Gray Bar) */}
                     <div className="bg-gray-100 px-4 py-2 flex flex-wrap justify-between text-xs text-gray-600 border-b border-gray-300">
@@ -357,8 +379,8 @@ const PurchaseHistory = () => {
 
                     {/* Order Items */}
                     <div className="p-4 overflow-visible">
-                        {order.orderItems.map((item, index) => (
-                            <div key={index} className="flex flex-col md:flex-row gap-4 mb-4 last:mb-0 overflow-visible">
+                        {order.orderItems.map((item, itemIdx) => (
+                            <div key={itemIdx} className="flex flex-col md:flex-row gap-4 mb-4 last:mb-0 overflow-visible">
                                 
                                 {/* Image */}
                                 <div className="w-32 h-32 bg-gray-100 shrink-0 border border-gray-200 rounded-sm overflow-hidden">
@@ -420,14 +442,14 @@ const PurchaseHistory = () => {
                                     </button>
                                     <div className="relative more-actions-container">
                                         <button 
-                                            onClick={() => handleClickMoreAction(order._id, index)}
+                                            onClick={() => handleClickMoreAction(order._id, itemIdx)}
                                             className="w-full border border-gray-300 text-blue-700 font-bold py-1.5 rounded-full text-sm hover:bg-gray-50 transition flex items-center justify-center gap-1"
                                         >
-                                            More actions <BsChevronDown size={10} className={`inline transition-transform ${openMoreActions[`${order._id}-${index}`] ? 'rotate-180' : ''}`}/>
+                                            More actions <BsChevronDown size={10} className={`inline transition-transform ${openMoreActions[`${order._id}-${itemIdx}`] ? 'rotate-180' : ''}`}/>
                                         </button>
                                         
                                         {/* Dropdown menu hiển thị khi click More actions */}
-                                        {openMoreActions[`${order._id}-${index}`] && (
+                                        {openMoreActions[`${order._id}-${itemIdx}`] && (
                                             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 overflow-hidden">
                                                 <button
                                                     onClick={() => handleAddToFavorites(item.product?._id || item.product)}
