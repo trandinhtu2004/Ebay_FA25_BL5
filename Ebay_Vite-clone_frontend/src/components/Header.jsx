@@ -53,7 +53,7 @@ const Header = ({ categories = [] }) => {
           <div className="flex gap-6">
             <a href="#" className="hover:underline">Sell</a>
             <a href="#" className="hover:underline flex items-center gap-1">Watchlist <AiOutlineDown /></a>
-            <a href="#" className="hover:underline flex items-center gap-1">My eBay <AiOutlineDown /></a>
+            <a href="/my-ebay" className="hover:underline flex items-center gap-1">My eBay <AiOutlineDown /></a>
             <div className="relative group">
               <BsBell 
                 className="text-lg cursor-pointer hover:text-blue-700 transition" 
