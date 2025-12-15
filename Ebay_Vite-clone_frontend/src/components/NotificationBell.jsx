@@ -76,14 +76,35 @@ function NotificationBell() {
 
     const handleViewOrder = (noti) => {
         handleMarkAsRead(noti._id);
-        setIsOpen(false);
-        const orderId = extractOrderId(noti.link);
-        if (orderId) {
-            navigate(`/my-ebay/purchase-history?orderId=${orderId}`);
-        } else {
-            // Fallback if no link, try to parse from message or just go to history
-            navigate('/my-ebay/purchase-history');
+        handleNavigation(noti.link);
+    };
+
+        const handleNavigation = (link) => {
+        if (!link) {
+             navigate('/my-ebay/summary'); // Default fallback
+             return;
         }
+
+        // Case 1: Link is like "/orders/123456..." -> Go to Purchase History with Search
+        if (link.startsWith('/orders/')) {
+            const parts = link.split('/');
+            const orderId = parts[parts.length - 1];
+            if (orderId) {
+                navigate(`/my-ebay/purchase-history?orderId=${orderId}`);
+                return;
+            }
+        }
+
+        // Case 2: Link is "/return-history" or similar static routes -> Go directly there
+        if (link === '/return-history') {
+             navigate('/my-ebay/return-history'); // Assuming you have this route, or map it to Purchase History tab
+             // If you don't have a separate return history page yet, maybe send to purchase history:
+             // navigate('/my-ebay/purchase-history'); 
+             return;
+        }
+        
+        // Case 3: Other links (e.g. /dashboard/orders for sellers)
+        navigate(link);
     };
 
     useEffect(() => {

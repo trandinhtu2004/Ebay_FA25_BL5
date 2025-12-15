@@ -404,26 +404,54 @@ const PurchaseHistory = () => {
                                     </Link>
                                     
                                     {/* Status Message */}
-                                    {order.status === 'delivered' ? (
+                                    {order.status === 'cancelled' ? (
                                         <div className="mt-3">
-                                            <div className="font-bold text-base text-[#191919] flex items-center gap-2">
-                                                <BsCheckCircleFill className="text-green-600" />
-                                                Delivered {order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString() : ''}
+                                            <div className="font-bold text-base text-red-600 flex items-center gap-2">
+                                                <BsInfoCircleFill className="text-red-600" />
+                                                Cancelled
                                             </div>
                                             <div className="text-xs text-gray-500 ml-6">
-                                                Package was left near the front door or porch.
+                                                Your order has been cancelled.
+                                            </div>
+                                        </div>
+                                    ) : order.status === 'shipped' ? (
+                                        <div className="mt-3">
+                                            <div className="font-bold text-base text-[#191919] flex items-center gap-2">
+                                                <BsInfoCircleFill className="text-blue-600" />
+                                                Shipped
+                                            </div>
+                                            <div className="text-xs text-gray-500 ml-6">
+                                                Your item has been shipped
+                                            </div>
+                                        </div>
+                                    ) : order.status === 'processing' ? (
+                                        <div className="mt-3">
+                                            <div className="font-bold text-base text-[#191919] flex items-center gap-2">
+                                                <BsInfoCircleFill className="text-blue-600" />
+                                                Processing
+                                            </div>
+                                            <div className="text-xs text-gray-500 ml-6">
+                                                We are preparing your order for shipment.
+                                            </div>
+                                        </div>
+                                    ) : order.status === 'pending_confirmation' ? (
+                                        <div className="mt-3">
+                                            <div className="font-bold text-base text-[#191919] flex items-center gap-2">
+                                                <BsInfoCircleFill className="text-blue-600" />
+                                                Pending Confirmation
+                                            </div>
+                                            <div className="text-xs text-gray-500 ml-6">
+                                                We are confirming your order details.
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="mt-3">
                                             <div className="font-bold text-base text-[#191919] flex items-center gap-2">
                                                 <BsInfoCircleFill className="text-blue-600" />
-                                                {order.status === 'shipped' ? 'Shipped' : 'Paid - Preparing for shipment'}
+                                                {order.status || 'Unknown Status'}
                                             </div>
                                             <div className="text-xs text-gray-500 ml-6">
-                                                {order.status === 'shipped' 
-                                                    ? 'Your item is on its way.' 
-                                                    : 'We will notify you when it ships.'}
+                                                Order status is being updated.
                                             </div>
                                         </div>
                                     )}
@@ -431,9 +459,11 @@ const PurchaseHistory = () => {
 
                                 {/* Actions Buttons (Right Side) */}
                                 <div className="w-full md:w-48 flex flex-col gap-2 relative">
-                                    <button onClick={() => handleReturnOrder(order._id, item.product?._id || item.product, index)} className="w-full bg-[#3665f3] hover:bg-[#2b50c4] text-white font-bold py-1.5 rounded-full text-sm transition">
+                                  {order.status!=="cancelled" ?
+                                    (<button onClick={() => handleReturnOrder(order._id, item.product?._id || item.product, index)} className="w-full bg-[#3665f3] hover:bg-[#2b50c4] text-white font-bold py-1.5 rounded-full text-sm transition">
                                         Return This Item
-                                    </button>
+                                    </button>) : (<></>)
+                                  }
                                     <button 
                                         onClick={() => handleAddToCart(item.product?._id || item.product)} 
                                         className="w-full border border-gray-300 text-blue-700 font-bold py-1.5 rounded-full text-sm hover:bg-gray-50 transition"
@@ -458,13 +488,15 @@ const PurchaseHistory = () => {
                                                     <BsHeart className="inline" />
                                                     Favorite Product
                                                 </button>
-                                                <button
+                                                {order.status!=="cancelled" ?
+                                                (<button
                                                     onClick={() => handleReturnOrder(order._id, item.product?._id || item.product, index)}
                                                     className="w-full px-4 py-2 text-left text-sm text-blue-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200"
                                                 >
                                                     <BsBoxes className="inline" />
                                                     Leave Comment/Rating
-                                                </button>
+                                                </button>) : (<></>)
+                                                }
                                             </div>
                                         )}
                                     </div>
