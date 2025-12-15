@@ -1,7 +1,7 @@
 // src/pages/MyEbay/PurchaseHistory.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BsSearch, BsChevronDown, BsCheckCircleFill, BsInfoCircleFill, BsHeart, BsArrowReturnLeft } from 'react-icons/bs';
+import { BsSearch, BsChevronDown, BsCheckCircleFill, BsInfoCircleFill, BsHeart, BsArrowReturnLeft, BsBoxes } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -149,7 +149,7 @@ const PurchaseHistory = () => {
 
   const handleReturnOrder = async (orderId, productId, itemIndex) => {
     try {
-      if (!orderId || !productId) {
+      if (!orderId) {
         toast.error("Thông tin đơn hàng không hợp lệ!");
         return;
       }
@@ -168,7 +168,7 @@ const PurchaseHistory = () => {
       }
 
       // Gọi API tạo yêu cầu hoàn trả
-      await axios.post(`${API_URL}/returns`, {
+      await axios.post(`http://localhost:5001/api/returns`, {
         orderId,
         productId,
         reason: reason.trim()
@@ -326,8 +326,8 @@ const PurchaseHistory = () => {
             </div>
         ) : (
             <>
-            {currentOrders.map(order => (
-                <div key={order._id} className="border border-gray-300 rounded-lg overflow-visible bg-white shadow-sm">
+            {currentOrders.map((order,index) => (
+                <div key={index} className="border border-gray-300 rounded-lg overflow-visible bg-white shadow-sm">
                     
                     {/* Order Header (Gray Bar) */}
                     <div className="bg-gray-100 px-4 py-2 flex flex-wrap justify-between text-xs text-gray-600 border-b border-gray-300">
@@ -351,7 +351,7 @@ const PurchaseHistory = () => {
                         </div>
                         <div className="mt-2 sm:mt-0">
                             <div className="uppercase text-[10px] mb-0.5 font-bold text-gray-500 text-right">ORDER # {order._id.substring(0, 8).toUpperCase()}</div>
-                            <div className="text-blue-700 font-medium hover:underline cursor-pointer text-right">View Order Details</div>
+                            <div  onClick={() => handleReturnOrder(order._id,order.productId?._id,index)}  className="text-blue-700 font-medium hover:underline cursor-pointer text-right">Return this order</div>
                         </div>
                     </div>
 
@@ -409,14 +409,14 @@ const PurchaseHistory = () => {
 
                                 {/* Actions Buttons (Right Side) */}
                                 <div className="w-full md:w-48 flex flex-col gap-2 relative">
-                                    <button className="w-full bg-[#3665f3] hover:bg-[#2b50c4] text-white font-bold py-1.5 rounded-full text-sm transition">
-                                        View Order Details
+                                    <button onClick={() => handleReturnOrder(order._id, item.product?._id || item.product, index)} className="w-full bg-[#3665f3] hover:bg-[#2b50c4] text-white font-bold py-1.5 rounded-full text-sm transition">
+                                        Return This Item
                                     </button>
                                     <button 
                                         onClick={() => handleAddToCart(item.product?._id || item.product)} 
                                         className="w-full border border-gray-300 text-blue-700 font-bold py-1.5 rounded-full text-sm hover:bg-gray-50 transition"
                                     >
-                                        Buy this again
+                                        Add To Cart
                                     </button>
                                     <div className="relative more-actions-container">
                                         <button 
@@ -440,8 +440,8 @@ const PurchaseHistory = () => {
                                                     onClick={() => handleReturnOrder(order._id, item.product?._id || item.product, index)}
                                                     className="w-full px-4 py-2 text-left text-sm text-blue-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200"
                                                 >
-                                                    <BsArrowReturnLeft className="inline" />
-                                                    Hoàn trả sản phẩm
+                                                    <BsBoxes className="inline" />
+                                                    Leave Comment/Rating
                                                 </button>
                                             </div>
                                         )}

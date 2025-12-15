@@ -1,7 +1,7 @@
 // routes/return.routes.js
 const express = require('express');
 const router = express.Router();
-const { createReturnRequest, getMyReturnRequests,
+const { createReturnOrderRequest, getMyReturnRequests,
     getAllReturnRequests,      // <-- MỚI (Admin)
     updateReturnRequestStatus
  } = require('../controllers/return.controller');
@@ -11,8 +11,7 @@ const { protect, isAdmin } = require('../middleware/auth.middleware');
 router.use(protect);
 
 router.route('/')
-    .post(createReturnRequest); // Tạo yêu cầu mới
-
+    .post(createReturnOrderRequest); // Tạo yêu cầu mới
 router.get('/myrequests', getMyReturnRequests); // Lấy lịch sử yêu cầu
 
 router.get('/admin', protect, isAdmin, getAllReturnRequests); // Lấy tất cả hoặc lọc
