@@ -5,15 +5,58 @@ import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
 import { BsTrash, BsInfoCircle, BsShieldCheck } from 'react-icons/bs';
 import { useAuth } from '../context/AuthContext';
+import { toast } from "react-toastify";
+
 
 const Cart = () => {
-  const { cart, updateQuantity, removeItem, loadingCart, cartTotal, cartItemCount } = useCart();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
+ const { cart, updateQuantity, removeItem, loadingCart, cartTotal, cartItemCount } = useCart();
+ const navigate = useNavigate();
+ const { user } = useAuth();
   // State lưu giá trị input tạm thời để tránh giật khi gõ phím
   const [tempQuantities, setTempQuantities] = useState({});
 
+  const handleCheckoutFromCart = () => {
+  if (!user) {
+   toast.info("Vui lòng đăng nhập để thanh toán.");
+   navigate('/login');
+   return;
+  }
+
+  if (!cart || cart.items.length === 0) {
+   toast.error("Giỏ hàng không có sản phẩm.");
+   return;
+  }
+
+  try {
+   // 1. Chuyển đổi cấu trúc cart.items sang định dạng Buy Now/Checkout
+   const checkoutItems = cart.items.map(item => ({
+    productId: item.product._id,
+    quantity: item.quantity,
+    isBuyNow: false, // Đánh dấu là đơn hàng từ giỏ hàng (không phải mua ngay)
+    // Có thể thêm các chi tiết khác nếu cần (tên, giá...)
+   }));
+
+   const checkoutCartData = {
+    products: checkoutItems,
+    source: 'cart'
+   };
+
+   // 2. Xóa bất kỳ dữ liệu 'Buy Now' cũ nào (Đảm bảo chỉ có 1 nguồn đơn hàng)
+   localStorage.removeItem('buyNowCart'); 
+   
+   // 3. Lưu giỏ hàng hiện tại vào Local Storage
+   localStorage.setItem('checkoutCart', JSON.stringify(checkoutCartData)); 
+
+   toast.info(`Đang chuyển đến trang thanh toán cho ${cartItemCount} sản phẩm.`);
+
+   // 4. Chuyển hướng đến trang thanh toán chi tiết
+   navigate('/detail/checkout'); // Dùng lại route thanh toán đã có
+
+  } catch (error) {
+   toast.error("Lỗi khi chuẩn bị đơn hàng thanh toán.");
+   console.error(error);
+  }
+ };
   // Đồng bộ state tạm thời với dữ liệu giỏ hàng khi cart thay đổi
   useEffect(() => {
     if (cart && cart.items) {
@@ -250,11 +293,11 @@ const Cart = () => {
                 </div>
 
                 <button 
-                    onClick={() => alert("Chức năng thanh toán đang phát triển")}
-                    className="w-full bg-[#3665f3] hover:bg-[#2b50c4] text-white font-bold py-3 rounded-full transition mb-4"
-                >
-                    Go to checkout
-                </button>
+          onClick={handleCheckoutFromCart} // Gắn hàm checkout mới
+          className="w-full bg-[#3665f3] hover:bg-[#2b50c4] text-white font-bold py-3 rounded-full transition mb-4"
+        >
+          Go to checkout
+        </button>
                 
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
                     <BsShieldCheck className="text-lg text-blue-700" />

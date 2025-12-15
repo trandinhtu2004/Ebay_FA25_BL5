@@ -9,6 +9,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import ProductDetail from './pages/ProductDetail';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Cart from './pages/Cart';
+import CheckoutPage from './pages/checkout/CheckoutPage';
+import Firm from './pages/checkout/Firm';
 function App() {
   return (
     <BrowserRouter>
@@ -23,6 +25,8 @@ function App() {
         <Route path="/register" element={<LoginPage initialMode="register" />} />
         <Route path ="/all-products" element={<FilterProduct/>}/>
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/detail/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/checkout/success" element={<ProtectedRoute><Firm /></ProtectedRoute>} />
         {/* Redirect trang lạ về home */}
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/cart" element={<ProtectedRoute><Cart/></ProtectedRoute>} />

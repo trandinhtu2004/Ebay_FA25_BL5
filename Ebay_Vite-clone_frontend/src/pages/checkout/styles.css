@@ -1,0 +1,369 @@
+/* Thiết lập cơ bản */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f7f7; /* Nền xám nhạt */
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.main-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/* Header - Mô phỏng thanh điều hướng trên cùng của eBay */
+.header {
+    background-color: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    padding: 10px 0;
+}
+
+.header-content {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-size: 30px;
+    font-weight: bold;
+    color: #e53238; /* Màu đỏ của eBay */
+    text-decoration: none;
+    margin-right: 20px;
+}
+
+.search-bar {
+    display: flex;
+    flex-grow: 1;
+    max-width: 600px;
+    border: 3px solid #0071eb; /* Màu xanh eBay */
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.search-bar input {
+    flex-grow: 1;
+    padding: 8px 10px;
+    border: none;
+    outline: none;
+}
+
+.search-bar button {
+    background-color: #0071eb;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.nav a {
+    color: #555;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+/* Tiêu đề trang */
+.page-title {
+    font-size: 24px;
+    font-weight: 300;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+/* Bố cục chính - Giống bố cục 2 cột của trang sản phẩm */
+.checkout-grid {
+    display: flex;
+    gap: 20px;
+}
+
+.left-column {
+    flex: 2; /* Chiếm 2/3 không gian (tương tự như vùng mô tả sản phẩm) */
+}
+
+.right-column {
+    flex: 1; /* Chiếm 1/3 không gian (tương tự như cột thông tin bán hàng/tóm tắt) */
+    min-width: 300px; /* Đảm bảo đủ rộng */
+}
+
+/* Phần Địa chỉ/Thanh toán (Cột trái) */
+.section-box {
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+}
+
+.section-title {
+    font-size: 18px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+/* Form Địa chỉ */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Giúp padding không làm tăng chiều rộng */
+}
+
+.input-group-row {
+    display: flex;
+    gap: 15px;
+}
+
+.input-group-row .input-group {
+    flex: 1;
+}
+
+.checkbox-group {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Tùy chọn Thanh toán */
+.payment-options {
+    display: flex;
+    flex-direction: column;
+}
+
+.radio-group {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.radio-group label {
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.radio-group i {
+    margin-right: 5px;
+    color: #0071eb; /* Màu xanh biểu tượng */
+}
+
+/* Mã Giảm giá */
+.discount-input {
+    display: flex;
+    gap: 10px;
+}
+
+.discount-input input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Nút */
+.primary-button {
+    background-color: #0071eb; /* Xanh dương eBay */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+
+.primary-button:hover {
+    background-color: #005bb5;
+}
+
+.secondary-button {
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.secondary-button:hover {
+    background-color: #e0e0e0;
+}
+
+.save-button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Cột phải: Tóm tắt đơn hàng */
+.order-summary-box {
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.summary-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.summary-item.discount .value {
+    color: #218838; /* Màu xanh lá cho giảm giá */
+    font-weight: bold;
+}
+
+.summary-item.product-info {
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.product-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+
+.product-details {
+    flex-grow: 1;
+}
+
+.product-name {
+    font-weight: bold;
+    margin: 0 0 5px 0;
+}
+
+.product-price, .product-qty {
+    font-size: 13px;
+    color: #555;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    margin: 15px 0;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.total-price {
+    color: #e53238; /* Màu đỏ nổi bật cho tổng tiền */
+}
+
+.buy-now-button {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.secure-info {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+}
+
+.secure-info i {
+    color: #218838;
+    margin-right: 5px;
+}
+
+/* Thông tin người bán - Mô phỏng cột bên phải */
+.seller-info-box {
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    padding: 15px;
+    text-align: center;
+}
+
+.seller-title {
+    font-size: 14px;
+    color: #555;
+    margin-top: 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+.rating {
+    color: #218838;
+}
+
+.seller-info-box a {
+    display: block;
+    margin-top: 10px;
+    color: #0071eb;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px 0;
+    font-size: 12px;
+    color: #888;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 30px;
+}
+
+/* Responsive cơ bản */
+@media (max-width: 768px) {
+    .checkout-grid {
+        flex-direction: column;
+    }
+
+    .header-content {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .search-bar {
+        order: 3; /* Đẩy thanh tìm kiếm xuống dưới */
+        margin-top: 10px;
+        max-width: none;
+    }
+}
