@@ -110,14 +110,13 @@ app.use('/api/store', require('./routes/store.routes.js'));
 app.use('/api/categories', require('./routes/category.routes.js'));
 app.use('/api/cart', require('./routes/cart.routes.js'));
 app.use('/api/address', require('./routes/address.routes.js'));
-app.use('/api/orders', require('./routes/order.routes.js')); // Controller sẽ gọi createNotificationInternal
+app.use('/api/orders', require('./routes/order.routes.js'));
 app.use('/api/payment', require('./routes/payment.routes.js'));
 app.use('/api/reviews', require('./routes/review.routes.js'));
 app.use('/api/returns', require('./routes/return.routes.js'));
 app.use('/api/coupons', require('./routes/coupon.routes.js'));
 app.use('/api/notifications', require('./routes/notification.routes.js')); // Controller chỉ xử lý GET/PUT
 app.use('/api/admin', require('./routes/admin.routes.js'));
-
 
 // --- Middleware Xử lý Lỗi Toàn cục ---
 app.use((err, req, res, next) => {

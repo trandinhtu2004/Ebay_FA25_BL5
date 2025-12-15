@@ -37,7 +37,7 @@ const OrderSchema = new Schema({
     paymentMethod: {
         type: String,
         required: true,
-        enum: ['COD', 'PayPal', 'VNPay'] // Các phương thức
+        enum: ['COD', 'PayPal', 'VNPay',"MoMo","momo"] // Các phương thức
     },
     
     // Tính toán giá
