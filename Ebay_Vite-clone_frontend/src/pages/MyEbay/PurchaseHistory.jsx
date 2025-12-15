@@ -7,15 +7,24 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import {toast} from 'react-toastify';
 import {useNavigate} from 'react-router-dom';
+import Pagination from '../../components/Pagination';
 // URL Backend
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
 
 const PurchaseHistory = () => {
-  const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]); // Tất cả orders từ API
+  const [filteredOrders, setFilteredOrders] = useState([]); // Orders sau khi filter
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // State để quản lý việc hiển thị More Actions cho từng item (key: "orderId-itemIndex")
   const [openMoreActions, setOpenMoreActions] = useState({});
+  // State cho pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5); // Số đơn hàng hiển thị mỗi trang
+  // State cho filter
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState(60); // Mặc định: Last 60 Days (0 = All)
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
   const { token, isAuthenticated } = useAuth(); // Lấy token để gọi API
 
   const navigate = useNavigate();
@@ -27,7 +36,8 @@ const PurchaseHistory = () => {
         const response = await axios.get('http://localhost:5001/api/orders/myorders', {
             headers: { Authorization: `Bearer ${token}` }
         });
-        setOrders(response.data);
+        setAllOrders(response.data);
+        setCurrentPage(1); // Reset về trang 1 khi load lại orders
       } catch (err) {
         console.error("Lỗi tải đơn hàng:", err);
         setError("Không thể tải lịch sử đơn hàng.");
@@ -41,12 +51,60 @@ const PurchaseHistory = () => {
     }
   }, [token]);
 
+  // Filter orders dựa trên searchTerm và dateFilter
+  useEffect(() => {
+    let filtered = [...allOrders];
+
+    // Filter theo số ngày
+    if (dateFilter > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - dateFilter);
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= cutoffDate;
+      });
+    }
+
+    // Filter theo search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(order => {
+        // Tìm trong Order ID
+        if (order._id.toLowerCase().includes(searchLower)) return true;
+        
+        // Tìm trong product titles
+        const hasMatchingProduct = order.orderItems.some(item => 
+          item.title.toLowerCase().includes(searchLower)
+        );
+        if (hasMatchingProduct) return true;
+
+        // Tìm trong seller names
+        const hasMatchingSeller = order.orderItems.some(item => 
+          item.product?.seller?.username?.toLowerCase().includes(searchLower)
+        );
+        if (hasMatchingSeller) return true;
+
+        // Tìm trong shipping address
+        if (order.shippingAddress?.fullName?.toLowerCase().includes(searchLower)) return true;
+
+        return false;
+      });
+    }
+
+    setFilteredOrders(filtered);
+    setCurrentPage(1); // Reset về trang 1 khi filter thay đổi
+  }, [allOrders, searchTerm, dateFilter]);
+
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Kiểm tra xem click có phải ở ngoài dropdown không
       if (!event.target.closest('.more-actions-container')) {
         setOpenMoreActions({});
+      }
+      // Đóng date filter dropdown
+      if (!event.target.closest('.date-filter-container')) {
+        setShowDateDropdown(false);
       }
     };
 
@@ -153,6 +211,28 @@ const PurchaseHistory = () => {
     }
   }
 
+  // Tính toán phân trang dựa trên filteredOrders
+  const indexOfLastOrder = currentPage * itemsPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+  // Helper function để lấy text cho date filter
+  const getDateFilterText = (days) => {
+    if (days === 0) return 'All';
+    if (days === 7) return 'Last 7 Days';
+    if (days === 30) return 'Last 30 Days';
+    if (days === 60) return 'Last 60 Days';
+    if (days === 90) return 'Last 90 Days';
+    return `Last ${days} Days`;
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll lên đầu trang khi chuyển trang
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) return <div>Loading orders...</div>;
   if (error) return <div className="text-red-500 p-4">{error}</div>
 
@@ -167,13 +247,21 @@ const PurchaseHistory = () => {
                 <input 
                     type="text" 
                     placeholder="Search your orders" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 pr-8 py-2 border border-gray-300 rounded-full text-sm w-full focus:outline-none focus:border-blue-500"
                 />
                 <BsSearch className="absolute left-3 top-2.5 text-gray-500" />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
             </div>
-            <button className="bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-blue-700 whitespace-nowrap">
-                Search orders
-            </button>
         </div>
       </div>
 
@@ -185,21 +273,60 @@ const PurchaseHistory = () => {
          </div>
          <div className="flex gap-4 items-center">
              <span className="text-gray-500 hidden sm:inline">See orders from:</span>
-             <button className="border border-gray-300 px-3 py-1 rounded font-bold flex items-center gap-2 hover:bg-gray-50 bg-white text-gray-700">
-                 Last 60 Days <BsChevronDown size={10}/>
-             </button>
+             <div className="relative date-filter-container">
+                 <button 
+                   onClick={() => setShowDateDropdown(!showDateDropdown)}
+                   className="border border-gray-300 px-3 py-1 rounded font-bold flex items-center gap-2 hover:bg-gray-50 bg-white text-gray-700"
+                 >
+                     {getDateFilterText(dateFilter)} <BsChevronDown size={10} className={`transition-transform ${showDateDropdown ? 'rotate-180' : ''}`}/>
+                 </button>
+                 
+                 {/* Date Filter Dropdown */}
+                 {showDateDropdown && (
+                   <div className="absolute right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[150px] overflow-hidden">
+                     {[0, 7, 30, 60, 90].map((days) => (
+                       <button
+                         key={days}
+                         onClick={() => {
+                           setDateFilter(days);
+                           setShowDateDropdown(false);
+                         }}
+                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition ${
+                           dateFilter === days ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700'
+                         }`}
+                       >
+                         {getDateFilterText(days)}
+                       </button>
+                     ))}
+                   </div>
+                 )}
+             </div>
          </div>
       </div>
 
       {/* --- ORDER LIST --- */}
       <div className="flex flex-col gap-6">
-        {orders.length === 0 ? (
+        {allOrders.length === 0 ? (
             <div className="text-center py-10 bg-gray-50 rounded border border-gray-200">
                 <p>You have no orders yet.</p>
                 <Link to="/" className="text-blue-700 underline font-bold">Start shopping</Link>
             </div>
+        ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-10 bg-gray-50 rounded border border-gray-200">
+                <p>No orders found matching your search criteria.</p>
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setDateFilter(60);
+                  }}
+                  className="text-blue-700 underline font-bold mt-2"
+                >
+                  Clear filters
+                </button>
+            </div>
         ) : (
-            orders.map(order => (
+            <>
+            {currentOrders.map(order => (
                 <div key={order._id} className="border border-gray-300 rounded-lg overflow-visible bg-white shadow-sm">
                     
                     {/* Order Header (Gray Bar) */}
@@ -314,7 +441,7 @@ const PurchaseHistory = () => {
                                                     className="w-full px-4 py-2 text-left text-sm text-blue-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200"
                                                 >
                                                     <BsArrowReturnLeft className="inline" />
-                                                    Hoàn trả đơn hàng
+                                                    Hoàn trả sản phẩm
                                                 </button>
                                             </div>
                                         )}
@@ -326,7 +453,20 @@ const PurchaseHistory = () => {
                     </div>
 
                 </div>
-            ))
+            ))}
+            
+            {/* Pagination Component */}
+            {filteredOrders.length > itemsPerPage && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={itemsPerPage}
+                totalItems={filteredOrders.length}
+                showInfo={true}
+              />
+            )}
+            </>
         )}
       </div>
     </div>
