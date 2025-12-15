@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 const NotificationsPage = () => {
     const { isAuthenticated, user } = useAuth();
     const [notifications, setNotifications] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -72,6 +73,22 @@ const NotificationsPage = () => {
             );
         } catch (err) {
             console.error('Lỗi đánh dấu đã đọc:', err);
+        }
+    };
+
+    const extractOrderId = (link) => {
+        if (!link) return null;
+        const parts = link.split('/');
+        return parts[parts.length - 1]; // Assumes ID is the last part
+    };
+
+    const handleViewOrder = (noti) => {
+        handleMarkAsRead(noti._id);
+        const orderId = extractOrderId(noti.link);
+        if (orderId) {
+            navigate(`/my-ebay/purchase-history?orderId=${orderId}`);
+        } else {
+            navigate('/my-ebay/purchase-history');
         }
     };
 
@@ -156,13 +173,12 @@ const NotificationsPage = () => {
                                     {/* Actions */}
                                     <div className="flex flex-col items-end gap-2 pl-4">
                                         {noti.link && (
-                                            <Link 
-                                                to={noti.link}
-                                                onClick={() => handleMarkAsRead(noti._id)}
-                                                className="px-4 py-1.5 bg-white border border-blue-600 text-blue-600 rounded-full text-sm font-bold hover:bg-blue-600 hover:text-white transition whitespace-nowrap"
+                                            <button 
+                                                onClick={() => handleViewOrder(noti)}
+                                                className="px-5 py-1.5 bg-white border border-blue-600 text-blue-600 rounded-full text-sm font-bold hover:bg-blue-700 hover:text-white transition-colors whitespace-nowrap"
                                             >
                                                 View
-                                            </Link>
+                                            </button>
                                         )}
                                         
                                         {!noti.isRead && (
