@@ -1,9 +1,12 @@
 // src/pages/FilterProduct.jsx
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { BsHeart } from 'react-icons/bs';
+import { toast } from 'react-toastify';
 import Header from '../components/Header';
 import Pagination from '../components/Pagination';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const API_URL = 'http://localhost:5001/api/products';
 
@@ -17,6 +20,9 @@ function FilterProduct() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(60);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
 
   // Lấy query param từ URL (ví dụ ?category=Electronics)
   const location = useLocation();
@@ -100,24 +106,98 @@ function FilterProduct() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAddToCart = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      toast.info('Vui lòng đăng nhập để thêm vào giỏ hàng');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await addToCart(product._id, 1);
+      toast.success('Đã thêm vào giỏ hàng!');
+    } catch (error) {
+      toast.error('Lỗi khi thêm vào giỏ hàng');
+    }
+  };
+
+  const handleBuyNow = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      toast.info('Vui lòng đăng nhập để mua hàng');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const buyNowItem = {
+        productId: product._id,
+        quantity: 1,
+        isBuyNow: true,
+        price: product.price,
+        title: product.title,
+        image: product.images?.[0]
+      };
+      const buyNowCart = {
+        products: [buyNowItem]
+      };
+      localStorage.setItem('buyNowCart', JSON.stringify(buyNowCart));
+      toast.info('Đang chuyển đến trang thanh toán...');
+      navigate('/detail/checkout');
+    } catch (error) {
+      toast.error('Lỗi khi chuẩn bị đơn hàng');
+    }
+  };
+
   const renderProductCard = (product) => (
-    <div key={product._id} className="group cursor-pointer border border-gray-200 rounded-lg p-2 hover:shadow-md transition">
+    <Link 
+      key={product._id} 
+      to={`/product/${product._id}`}
+      className="group border border-gray-200 rounded-lg p-2 hover:shadow-md transition block"
+    >
       <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
         <img 
           src={product.images?.[0] || 'https://placehold.co/200x200?text=No+Image'} 
           alt={product.title} 
           className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
         />
-        <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow hover:text-ebay-red opacity-0 group-hover:opacity-100 transition">
+        <button 
+          className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow hover:text-ebay-red opacity-0 group-hover:opacity-100 transition z-10"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           <BsHeart />
         </button>
       </div>
       <h3 className="text-sm hover:underline hover:text-blue-700 line-clamp-2 h-10 mb-1 leading-snug text-gray-800">
         {product.title}
       </h3>
-      <div className="font-bold text-lg text-gray-900">${product.price.toLocaleString()}</div>
-      <div className="text-xs text-gray-500">Free shipping</div> 
-    </div>
+      <div className="font-bold text-lg text-gray-900 mb-1">${product.price.toLocaleString()}</div>
+      <div className="text-xs text-gray-500 mb-2">Free shipping</div>
+      
+      {/* Action Buttons */}
+      <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition">
+        <button
+          onClick={(e) => handleAddToCart(e, product)}
+          className="flex-1 bg-[#d6e3ff] text-[#0654ba] hover:bg-[#c3d5f5] text-xs font-semibold py-1.5 px-2 rounded transition"
+        >
+          Add to cart
+        </button>
+        <button
+          onClick={(e) => handleBuyNow(e, product)}
+          className="flex-1 bg-[#3665f3] hover:bg-[#2b50c4] text-white text-xs font-semibold py-1.5 px-2 rounded transition"
+        >
+          Buy now
+        </button>
+      </div>
+    </Link>
   );
 
   return (
