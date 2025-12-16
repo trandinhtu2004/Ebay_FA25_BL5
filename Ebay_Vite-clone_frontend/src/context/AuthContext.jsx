@@ -134,7 +134,9 @@ export const AuthProvider = ({ children }) => {
 
     // --- Hàm Update User ---
     const updateUser = useCallback((newUserData) => {
-        const updatedUser = { ...user, ...newUserData };
+        // Chuẩn hóa userId: ưu tiên userId từ data mới hoặc _id, nếu không có thì dùng userId cũ
+        const userId = newUserData.userId || newUserData._id || user?.userId;
+        const updatedUser = { ...user, ...newUserData, userId };
         setUser(updatedUser);
         sessionStorage.setItem('user', JSON.stringify(updatedUser));
     }, [user]);
