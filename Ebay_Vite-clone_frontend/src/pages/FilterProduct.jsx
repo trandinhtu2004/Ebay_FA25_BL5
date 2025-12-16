@@ -52,6 +52,13 @@ function FilterProduct() {
   }, []);
 
   // Logic lọc sản phẩm khi data thay đổi hoặc user chọn filter
+  // Đồng bộ selectedCategory với URL (chỉ khi URL có category param)
+  useEffect(() => {
+    if (urlCategory) {
+      setSelectedCategory(urlCategory);
+    }
+  }, [urlCategory]);
+
   useEffect(() => {
     let result = allProducts;
 
@@ -82,9 +89,6 @@ function FilterProduct() {
     setFilteredProducts(result);
     // Mỗi khi bộ lọc thay đổi thì quay về trang 1
     setCurrentPage(1);
-    
-    // Cập nhật state selectedCategory nếu có URL param để UI đồng bộ
-    if (urlCategory) setSelectedCategory(urlCategory);
 
   }, [allProducts, selectedCategory, urlCategory, urlSearch, minPrice, maxPrice]);
 
