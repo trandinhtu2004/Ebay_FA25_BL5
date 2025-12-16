@@ -8,7 +8,10 @@ const Pagination = ({
   onPageChange,
   itemsPerPage,
   totalItems,
-  showInfo = true 
+  showInfo = true,
+  itemsPerPageOptions = [20, 40, 60],
+  onItemsPerPageChange,
+  itemsLabel = 'items'
 }) => {
   // Tính toán số trang hiển thị (tối đa 5 trang)
   const getPageNumbers = () => {
@@ -47,25 +50,27 @@ const Pagination = ({
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  if (totalPages <= 1) return null;
-
   return (
-    <div className="flex flex-col items-center gap-4 mt-6">
-      {showInfo && (
-        <div className="text-sm text-gray-600">
-          Showing {startItem}-{endItem} of {totalItems} orders
-        </div>
-      )}
+    <div className="border-t border-gray-200 mt-8 pt-4 flex items-center justify-between gap-4">
+      {/* Info bên trái */}
+      <div className="text-xs sm:text-sm text-gray-600">
+        {showInfo && totalItems > 0 && (
+          <>
+            Showing {startItem}-{endItem} of {totalItems} {itemsLabel}
+          </>
+        )}
+      </div>
       
-      <div className="flex items-center gap-2">
-        {/* Previous Button */}
+      {/* Pagination center giống eBay */}
+      <div className="flex items-center gap-2 justify-center flex-1">
+        {/* Previous Button (tròn) */}
         <button
           onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className={`p-2 rounded border transition-colors ${
-            currentPage === 1
-              ? 'text-gray-300 border-gray-200 cursor-not-allowed'
-              : 'text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400'
+          disabled={currentPage === 1 || totalPages <= 1}
+          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
+            currentPage === 1 || totalPages <= 1
+              ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+              : 'text-gray-800 bg-gray-100 hover:bg-gray-200'
           }`}
           aria-label="Previous page"
         >
@@ -92,10 +97,10 @@ const Pagination = ({
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`w-10 h-10 rounded border text-sm font-bold transition-colors ${
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full text-sm font-medium transition-colors ${
               currentPage === page
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                ? 'bg-black text-white'
+                : 'text-gray-800 hover:bg-gray-100'
             }`}
             aria-label={`Go to page ${page}`}
             aria-current={currentPage === page ? 'page' : undefined}
@@ -112,26 +117,43 @@ const Pagination = ({
             )}
             <button
               onClick={() => onPageChange(totalPages)}
-              className="w-10 h-10 rounded border text-sm font-bold bg-white text-gray-700 border-gray-300 hover:bg-gray-100 transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full text-sm font-medium text-gray-800 hover:bg-gray-100 transition-colors"
             >
               {totalPages}
             </button>
           </>
         )}
 
-        {/* Next Button */}
+        {/* Next Button (tròn) */}
         <button
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className={`p-2 rounded border transition-colors ${
-            currentPage === totalPages
-              ? 'text-gray-300 border-gray-200 cursor-not-allowed'
-              : 'text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400'
+          disabled={currentPage === totalPages || totalPages <= 1}
+          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
+            currentPage === totalPages || totalPages <= 1
+              ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+              : 'text-gray-800 bg-gray-100 hover:bg-gray-200'
           }`}
           aria-label="Next page"
         >
           <AiOutlineRight size={16} />
         </button>
+      </div>
+
+      {/* Items per page giống eBay */}
+      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+        <span className="hidden sm:inline">Items Per Page</span>
+        <span className="sm:hidden">Per page</span>
+        <select
+          className="border border-gray-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-black"
+          value={itemsPerPage}
+          onChange={(e) => onItemsPerPageChange && onItemsPerPageChange(Number(e.target.value))}
+        >
+          {itemsPerPageOptions.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

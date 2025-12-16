@@ -1,6 +1,7 @@
 // controllers/coupon.controller.js
 const Coupon = require('../models/Coupon.model');
 const Cart = require('../models/Cart.model');
+const Order = require('../models/Order.model');
 
 // @desc    Tạo coupon mới (Admin)
 // @route   POST /api/coupons
@@ -38,7 +39,7 @@ exports.createCoupon = async (req, res) => {
 // @route   POST /api/coupons/validate
 // @access  Private
 exports.validateCoupon = async (req, res) => {
-    const { code } = req.body;
+    const { code, orderTotal } = req.body; // Thêm orderTotal để tính từ checkout
     const userId = req.user._id;
 
     if (!code) {
@@ -52,8 +53,9 @@ exports.validateCoupon = async (req, res) => {
         if (!coupon) {
             return res.status(404).json({ message: 'Mã coupon không hợp lệ hoặc đã bị vô hiệu hóa.' });
         }
+        
         //kiểm tra user đã sử dụng coupon chưa
-        const userOrdersWithCoupon = await Order.find({ user: userId, couponApplied: coupon.code });
+        const userOrdersWithCoupon = await Order.find({ buyer: userId, couponApplied: coupon.code });
         
         if (userOrdersWithCoupon.length > 0) {
             return res.status(400).json({ message: 'Bạn đã sử dụng mã coupon này trước đó.' });
@@ -70,21 +72,36 @@ exports.validateCoupon = async (req, res) => {
             return res.status(400).json({ message: 'Mã coupon đã hết lượt sử dụng.' });
         }
 
-        // 4. Lấy giỏ hàng của user để tính toán
-        const cart = await Cart.findOne({ user: userId }).populate('items.product', 'price');
-        if (!cart || cart.items.length === 0) {
-            return res.status(400).json({ message: 'Giỏ hàng trống.' });
+        // 4. Tính tổng tiền hàng
+        let cartTotal = 0;
+        
+        // Nếu có orderTotal từ checkout, dùng nó (ưu tiên)
+        if (orderTotal && orderTotal > 0) {
+            cartTotal = Number(orderTotal);
+        } else {
+            // Nếu không, lấy từ giỏ hàng
+            const cart = await Cart.findOne({ user: userId }).populate('items.product', 'price');
+            if (!cart || !cart.items || cart.items.length === 0) {
+                return res.status(400).json({ message: 'Giỏ hàng trống hoặc không có thông tin đơn hàng.' });
+            }
+            cartTotal = cart.items.reduce((acc, item) => {
+                if (item.product && item.product.price) {
+                    return acc + (Number(item.product.price) * Number(item.quantity || 1));
+                }
+                return acc;
+            }, 0);
         }
         
-        // 5. Tính tổng tiền hàng (chưa giảm giá)
-        let cartTotal = cart.items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+        if (cartTotal <= 0) {
+            return res.status(400).json({ message: 'Tổng tiền đơn hàng không hợp lệ.' });
+        }
 
-        // 6. Kiểm tra giá trị đơn hàng tối thiểu
+        // 5. Kiểm tra giá trị đơn hàng tối thiểu
         if (cartTotal < coupon.minOrderAmount) {
             return res.status(400).json({ message: `Đơn hàng tối thiểu ${coupon.minOrderAmount}$ để áp dụng mã này.` });
         }
         
-        // 7. Tính toán giảm giá
+        // 6. Tính toán giảm giá
         let discountAmount = (cartTotal * coupon.discountPercent) / 100;
         
         // (Nếu có productId, logic tính discount sẽ phức tạp hơn - tạm thời bỏ qua)
@@ -98,6 +115,79 @@ exports.validateCoupon = async (req, res) => {
 
     } catch (error) {
         console.error("Lỗi xác thực coupon:", error);
+        // Trả về thông báo lỗi chi tiết hơn để debug
+        const errorMessage = error.message || 'Lỗi máy chủ.';
+        res.status(500).json({ 
+            message: 'Lỗi máy chủ.',
+            error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        });
+    }
+};
+
+// @desc    Seed data mẫu cho coupon (Admin)
+// @route   POST /api/coupons/seed
+// @access  Private/Admin
+exports.seedCoupons = async (req, res) => {
+    try {
+        const sampleCoupons = [
+            {
+                code: 'SALE20',
+                discountPercent: 20,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 ngày
+                maxUsage: 100,
+                minOrderAmount: 50,
+                isActive: true
+            },
+            {
+                code: 'SUMMER50',
+                discountPercent: 50,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 ngày
+                maxUsage: 50,
+                minOrderAmount: 100,
+                isActive: true
+            },
+            {
+                code: 'WELCOME10',
+                discountPercent: 10,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 ngày
+                maxUsage: 200,
+                minOrderAmount: 20,
+                isActive: true
+            },
+            {
+                code: 'FLASH30',
+                discountPercent: 30,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 ngày
+                maxUsage: 30,
+                minOrderAmount: 75,
+                isActive: true
+            }
+        ];
+
+        const createdCoupons = [];
+        for (const couponData of sampleCoupons) {
+            const existing = await Coupon.findOne({ code: couponData.code });
+            if (!existing) {
+                const coupon = new Coupon(couponData);
+                await coupon.save();
+                createdCoupons.push(coupon);
+            } else {
+                createdCoupons.push(existing);
+            }
+        }
+
+        res.status(201).json({
+            message: 'Seed coupons thành công!',
+            created: createdCoupons.length,
+            coupons: createdCoupons
+        });
+
+    } catch (error) {
+        console.error("Lỗi seed coupons:", error);
         res.status(500).json({ message: 'Lỗi máy chủ.' });
     }
 };

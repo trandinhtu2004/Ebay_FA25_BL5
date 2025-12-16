@@ -1,5 +1,5 @@
 // src/components/Header.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BsBell, BsCart2, BsSearch } from 'react-icons/bs';
 import { AiOutlineDown } from 'react-icons/ai';
@@ -10,15 +10,33 @@ import Cart from './../pages/Cart';
 import NotificationBell from './NotificationBell';
 const Header = ({ categories = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const { cartItemCount, hasNewNotification, clearNotification } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
- 
- 
+  const categoryDropdownRef = useRef(null);
+
   const handleSearch = () => {
     // Chuyển hướng sang trang filter với từ khóa tìm kiếm
     navigate(`/all-products?search=${encodeURIComponent(searchTerm)}`);
   };
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target)) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+
+    if (isCategoryDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCategoryDropdownOpen]);
 
   
 
@@ -99,8 +117,42 @@ const Header = ({ categories = [] }) => {
             <span className="text-ebay-red">e</span><span className="text-ebay-blue">b</span><span className="text-ebay-yellow">a</span><span className="text-ebay-green">y</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-1 text-sm text-gray-600 cursor-pointer whitespace-nowrap hover:text-blue-600">
-            Shop by category <AiOutlineDown size={10} />
+          <div className="relative hidden md:block" ref={categoryDropdownRef}>
+            <div 
+              className="flex items-center gap-1 text-sm text-gray-600 cursor-pointer whitespace-nowrap hover:text-blue-600"
+              onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+            >
+              Shop by category <AiOutlineDown size={10} />
+            </div>
+            
+            {/* Dropdown Menu */}
+            {isCategoryDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto">
+                <div className="py-2">
+                  <Link
+                    to="/all-products"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                    onClick={() => setIsCategoryDropdownOpen(false)}
+                  >
+                    All Categories
+                  </Link>
+                  {categories.length > 0 ? (
+                    categories.map((cat, index) => (
+                      <Link
+                        key={index}
+                        to={`/all-products?category=${encodeURIComponent(cat)}`}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                        onClick={() => setIsCategoryDropdownOpen(false)}
+                      >
+                        {cat}
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-sm text-gray-500">No categories available</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 flex h-10 md:h-12 border-2 border-black rounded overflow-hidden relative">

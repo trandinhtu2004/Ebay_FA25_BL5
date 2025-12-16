@@ -27,7 +27,8 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("momo");
 
   const [discountCode, setDiscountCode] = useState("");
-  const [isCodeApplied, setIsCodeApplied] = useState(true);
+  const [isCodeApplied, setIsCodeApplied] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
   const [checkoutProducts, setCheckoutProducts] = useState([]);
 
   // State Địa chỉ
@@ -93,12 +94,12 @@ const CheckoutPage = () => {
     fetchCheckoutProducts();
   }, [fetchCheckoutProducts]);
 
-  // --- LOGIC TÍNH TOÁN (Giữ nguyên) ---
+  // --- LOGIC TÍNH TOÁN (Cập nhật để trừ discount) ---
   const initialProductValue = checkoutProducts.reduce(
     (sum, p) => sum + p.itemValue,
     0
   );
-  const totalAmount = (initialProductValue + SHIPPING_FEE).toFixed(2);
+  const totalAmount = (initialProductValue + SHIPPING_FEE - discountAmount).toFixed(2);
 
   const checkoutDetails = {
     productValue: initialProductValue,
@@ -211,6 +212,8 @@ const CheckoutPage = () => {
                 setDiscountCode={setDiscountCode}
                 isCodeApplied={isCodeApplied}
                 setIsCodeApplied={setIsCodeApplied}
+                setDiscountAmount={setDiscountAmount}
+                checkoutProducts={checkoutProducts}
               />
             </div>
 
@@ -220,7 +223,8 @@ const CheckoutPage = () => {
                 products={checkoutProducts}
                 details={checkoutDetails}
                 totalAmount={totalAmount}
-                isCodeApplied={isCodeApplied}
+                discountAmount={discountAmount}
+                shippingFee={SHIPPING_FEE}
                 handleCheckout={handleCheckout}
                 isProcessing={isProcessingPayment}
               />
