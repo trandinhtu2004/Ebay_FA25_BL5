@@ -76,20 +76,33 @@ const NotificationsPage = () => {
         }
     };
 
-    const extractOrderId = (link) => {
-        if (!link) return null;
-        const parts = link.split('/');
-        return parts[parts.length - 1]; // Assumes ID is the last part
-    };
+    // const extractOrderId = (link) => {
+    //     if (!link) return null;
+    //     const parts = link.split('/');
+    //     return parts[parts.length - 1]; // Assumes ID is the last part
+    // };
 
-    const handleViewOrder = (noti) => {
-        handleMarkAsRead(noti._id);
-        const orderId = extractOrderId(noti.link);
-        if (orderId) {
-            navigate(`/my-ebay/purchase-history?orderId=${orderId}`);
-        } else {
-            navigate('/my-ebay/purchase-history');
+    const handleNavigation = (link) => {
+        if (!link) return;
+
+        // 1. Nếu link là trang Return History (được backend trả về khi update status return)
+        if (link.includes('/return-history')) {
+            navigate('/my-ebay/return-history');
+            return;
         }
+
+        // 2. Nếu link là Order Detail (cũ) -> Vẫn về Purchase History và search
+        if (link.startsWith('/orders/')) {
+            const parts = link.split('/');
+            const orderId = parts[parts.length - 1];
+            if (orderId) {
+                navigate(`/my-ebay/purchase-history?orderId=${orderId}`);
+                return;
+            }
+        }
+
+        // 3. Các link khác
+        navigate(link);
     };
 
     // 5. Xử lý đánh dấu tất cả
@@ -174,7 +187,7 @@ const NotificationsPage = () => {
                                     <div className="flex flex-col items-end gap-2 pl-4">
                                         {noti.link && (
                                             <button 
-                                                onClick={() => handleViewOrder(noti)}
+                                                onClick={() => handleNavigation(noti)}
                                                 className="px-5 py-1.5 bg-white border border-blue-600 text-blue-600 rounded-full text-sm font-bold hover:bg-blue-700 hover:text-white transition-colors whitespace-nowrap"
                                             >
                                                 View

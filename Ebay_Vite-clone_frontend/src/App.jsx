@@ -15,6 +15,7 @@ import MyEbayLayout from './Layouts/MyEbayLayout';
 import Summary from './pages/MyEbay/Summary';
 import PurchaseHistory from './pages/MyEbay/PurchaseHistory';
 import NotificationsPage from './pages/NotificationsPage';
+import ReturnHistory from './pages/MyEbay/ReturnHistory';
 function App() {
   return (
     <BrowserRouter>
@@ -42,7 +43,7 @@ function App() {
               <Route index element={<Navigate to="summary" replace />} />
               <Route path="summary" element={<ProtectedRoute><Summary /></ProtectedRoute>} />
               <Route path="purchase-history" element={<ProtectedRoute><PurchaseHistory /></ProtectedRoute>} />
-              
+              <Route path="return-history" element={<ReturnHistory />} />
               {/* Fallback cho các link chưa làm */}
               <Route path="*" element={<div className="p-10 text-center">Page under construction</div>} />
             </Route>

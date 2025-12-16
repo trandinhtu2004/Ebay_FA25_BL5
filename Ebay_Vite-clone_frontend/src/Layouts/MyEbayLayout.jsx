@@ -14,6 +14,7 @@ const MyEbayLayout = () => {
     { name: 'Bids/Offers', path: '/my-ebay/bids-offers' },
     { name: 'Watchlist', path: '/my-ebay/watchlist' },
     { name: 'Purchase history', path: '/my-ebay/purchase-history' },
+    { name: 'Returns & Cancellations', path: '/my-ebay/return-history' },
     { name: 'Buy Again', path: '/my-ebay/buy-again' },
     { name: 'Selling', path: '/my-ebay/selling' },
     { name: 'Saved searches', path: '/my-ebay/saved-searches' },
