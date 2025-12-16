@@ -16,6 +16,7 @@ import { useCart } from "../context/CartContext";
 
 const API_URL = "http://localhost:5001/api/products"; // Đảm bảo port đúng với backend
 const CART_API_URL = "http://localhost:5001/api/cart";
+const REVIEW_API_URL = "http://localhost:5001/api/reviews";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -31,6 +32,11 @@ const ProductDetail = () => {
 
   // State cho sản phẩm tương tự
   const [similarProducts, setSimilarProducts] = useState([]);
+
+  // State cho reviews của sản phẩm
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
 
   // --- 1. Fetch Product & Similar Products ---
   useEffect(() => {
@@ -51,6 +57,9 @@ const ProductDetail = () => {
         if (data.category) {
           fetchSimilarProducts(data.category._id || data.category, data._id);
         }
+
+        // C. Lấy reviews cho sản phẩm
+        fetchProductReviews(data._id);
       } catch (error) {
         console.error(error);
         toast.error("Không thể tải thông tin sản phẩm");
@@ -110,6 +119,24 @@ const ProductDetail = () => {
       setSimilarProducts(filtered.slice(0, 5)); // Lấy 5 sản phẩm
     } catch (error) {
       console.error("Failed to fetch similar products", error);
+    }
+  };
+
+  const fetchProductReviews = async (productId) => {
+    try {
+      setLoadingReviews(true);
+      setReviewsError(null);
+      const res = await fetch(`${REVIEW_API_URL}/${productId}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch reviews");
+      }
+      const data = await res.json();
+      setReviews(data || []);
+    } catch (error) {
+      console.error("Failed to fetch reviews", error);
+      setReviewsError("Không thể tải đánh giá.");
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -361,6 +388,66 @@ const ProductDetail = () => {
                       alt={`Description shot ${index + 1}`}
                       className="w-full h-auto object-contain max-h-[400px]"
                     />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* --- REVIEWS --- */}
+        <div className="mt-12 border-t border-gray-200 pt-8">
+          <h2 className="text-xl font-bold mb-4 bg-gray-100 p-2 inline-block rounded-t border-t border-l border-r border-gray-200">
+            Reviews
+          </h2>
+          <div className="border border-gray-200 p-6 rounded-b rounded-r min-h-[100px]">
+            {loadingReviews ? (
+              <div className="text-sm text-gray-500">Đang tải đánh giá...</div>
+            ) : reviewsError ? (
+              <div className="text-sm text-red-500">{reviewsError}</div>
+            ) : reviews.length === 0 ? (
+              <div className="text-sm text-gray-600">
+                Chưa có đánh giá nào cho sản phẩm này.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((rev) => (
+                  <div
+                    key={rev._id}
+                    className="border-b border-gray-100 pb-3 last:border-b-0"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-sm font-semibold text-gray-900">
+                        {rev.reviewer?.username || "Người dùng"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {rev.createdAt
+                          ? new Date(rev.createdAt).toLocaleDateString()
+                          : ""}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex text-yellow-500">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <BsStarFill
+                            key={i}
+                            className={
+                              i < (rev.rating || 0)
+                                ? ""
+                                : "text-gray-300"
+                            }
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-600">
+                        {rev.rating}/5
+                      </span>
+                    </div>
+                    {rev.comment && (
+                      <p className="text-sm text-gray-700 whitespace-pre-line">
+                        {rev.comment}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

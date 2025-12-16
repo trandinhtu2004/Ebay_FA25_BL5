@@ -21,6 +21,17 @@ const PurchaseHistory = () => {
   // State quản lý việc hiển thị modal địa chỉ của từng order (key: orderId)
   const [openAddressModal, setOpenAddressModal] = useState({});
 
+  // State cho modal Review
+  const [reviewModal, setReviewModal] = useState({
+    open: false,
+    orderId: null,
+    productId: null,
+    itemTitle: ''
+  });
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   
@@ -210,6 +221,74 @@ const PurchaseHistory = () => {
       // Logic thêm yêu thích
       toast.success("Đã thêm vào yêu thích!");
   }
+
+  // Mở modal Review cho 1 item
+  const handleOpenReviewModal = (orderId, productId, title, moreActionKey) => {
+    setReviewModal({
+      open: true,
+      orderId,
+      productId,
+      itemTitle: title || ''
+    });
+    setReviewRating(5);
+    setReviewComment('');
+
+    if (moreActionKey) {
+      setOpenMoreActions(prev => ({ ...prev, [moreActionKey]: false }));
+    }
+  };
+
+  const handleCloseReviewModal = () => {
+    setReviewModal({
+      open: false,
+      orderId: null,
+      productId: null,
+      itemTitle: ''
+    });
+    setReviewComment('');
+    setReviewRating(5);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!reviewModal.orderId || !reviewModal.productId) {
+      toast.error('Thông tin đơn hàng/sản phẩm không hợp lệ.');
+      return;
+    }
+    if (!isAuthenticated) {
+      toast.info('Vui lòng đăng nhập để đánh giá.');
+      navigate('/login');
+      return;
+    }
+    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
+      toast.error('Vui lòng chọn số sao từ 1 đến 5.');
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      await axios.post(
+        `${API_URL}/api/reviews`,
+        {
+          productId: reviewModal.productId,
+          orderId: reviewModal.orderId,
+          rating: reviewRating,
+          comment: reviewComment
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      toast.success('Gửi đánh giá thành công!');
+      handleCloseReviewModal();
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Không thể gửi đánh giá.';
+      toast.error(errorMessage);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const indexOfLastOrder = currentPage * itemsPerPage;
   const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
@@ -434,8 +513,18 @@ const PurchaseHistory = () => {
                                                     <BsHeart className="inline" /> Favorite Product
                                                 </button>
                                                 {!disableItemReturn && (
-                                                    <button onClick={() => handleReturnOrder(order._id, item.product?._id || item.product, index)} className="w-full px-4 py-2 text-left text-sm text-blue-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200">
-                                                        <BsBoxes className="inline" /> {returnButtonText}
+                                                    <button
+                                                      onClick={() =>
+                                                        handleOpenReviewModal(
+                                                          order._id,
+                                                          item.product?._id || item.product,
+                                                          item.title,
+                                                          `${order._id}-${itemIdx}`
+                                                        )
+                                                      }
+                                                      className="w-full px-4 py-2 text-left text-sm text-blue-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200"
+                                                    >
+                                                        <BsBoxes className="inline" /> Review
                                                     </button>
                                                 )}
                                             </div>
@@ -454,6 +543,76 @@ const PurchaseHistory = () => {
             </>
         )}
       </div>
+
+      {/* Modal Review */}
+      {reviewModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+            <div className="border-b px-4 py-3 flex justify-between items-center">
+              <h3 className="font-bold text-lg">Review item</h3>
+              <button
+                onClick={handleCloseReviewModal}
+                className="text-gray-500 hover:text-gray-700 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleSubmitReview} className="px-4 py-4 space-y-4">
+              {reviewModal.itemTitle && (
+                <div className="text-sm text-gray-700">
+                  <span className="font-semibold">Item: </span>
+                  <span>{reviewModal.itemTitle}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold mb-1">
+                  Rating (1 - 5)
+                </label>
+                <select
+                  value={reviewRating}
+                  onChange={(e) => setReviewRating(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  {[1, 2, 3, 4, 5].map((v) => (
+                    <option key={v} value={v}>
+                      {v} star{v > 1 ? 's' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">
+                  Comment
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  rows={4}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none"
+                  placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseReviewModal}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50"
+                  disabled={submittingReview}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm rounded-full bg-[#3665f3] text-white font-bold hover:bg-[#2b50c4] disabled:opacity-60"
+                  disabled={submittingReview}
+                >
+                  {submittingReview ? 'Submitting...' : 'Submit review'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
