@@ -15,7 +15,7 @@ const ADDRESS_API = `${API_URL}/address`;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, token, updateUser } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState("info"); // info | password | address
   const [loading, setLoading] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
@@ -128,25 +128,17 @@ const ProfilePage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.message || "Lỗi cập nhật");
+      // Axios đã được setup với baseURL và Authorization header tự động trong AuthContext
+      // Dùng relative path để nhất quán với các phần khác
+      const response = await axios.put('/api/users/profile', profileData);
 
       // Cập nhật user trong AuthContext
-      updateUser(data); // data là user mới từ backend
+      updateUser(response.data); // response.data là user mới từ backend
       toast.success("Cập nhật hồ sơ thành công!");
 
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Lỗi cập nhật';
+      console.error("Lỗi cập nhật profile:", error);
+      const errorMessage = error.response?.data?.message || error.message || 'Lỗi cập nhật';
       toast.error(errorMessage);
     } finally {
       setLoading(false);
