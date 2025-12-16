@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { BsHeart } from 'react-icons/bs';
 import Header from '../components/Header';
+import Pagination from '../components/Pagination';
 
 const API_URL = 'http://localhost:5001/api/products';
 
@@ -11,6 +12,10 @@ function FilterProduct() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]); // Danh sách category lấy từ sản phẩm
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(60);
   const [loading, setLoading] = useState(true);
 
   // Lấy query param từ URL (ví dụ ?category=Electronics)
@@ -56,12 +61,44 @@ function FilterProduct() {
       result = result.filter(p => p.title.toLowerCase().includes(urlSearch.toLowerCase()));
     }
 
+    // Lọc theo khoảng giá (nếu có)
+    const min = minPrice !== '' ? Number(minPrice) : null;
+    const max = maxPrice !== '' ? Number(maxPrice) : null;
+
+    if (min !== null) {
+      result = result.filter(p => Number(p.price) >= min);
+    }
+
+    if (max !== null) {
+      result = result.filter(p => Number(p.price) <= max);
+    }
+
     setFilteredProducts(result);
+    // Mỗi khi bộ lọc thay đổi thì quay về trang 1
+    setCurrentPage(1);
     
     // Cập nhật state selectedCategory nếu có URL param để UI đồng bộ
     if (urlCategory) setSelectedCategory(urlCategory);
 
-  }, [allProducts, selectedCategory, urlCategory, urlSearch]);
+  }, [allProducts, selectedCategory, urlCategory, urlSearch, minPrice, maxPrice]);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const renderProductCard = (product) => (
     <div key={product._id} className="group cursor-pointer border border-gray-200 rounded-lg p-2 hover:shadow-md transition">
@@ -91,46 +128,95 @@ function FilterProduct() {
         
         {/* --- LEFT SIDEBAR (FILTER) --- */}
         <div className="w-64 flex-shrink-0 hidden md:block">
-          <h3 className="font-bold text-lg mb-4">Categories</h3>
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600">
-              <input 
-                type="radio" 
-                name="category" 
-                checked={selectedCategory === 'All'} 
-                onChange={() => setSelectedCategory('All')}
-                className="accent-black"
-              />
-              All Categories
-            </label>
-            {categories.map(cat => (
-              <label key={cat} className="flex items-center gap-2 cursor-pointer hover:text-blue-600">
+          {/* Lọc theo danh mục */}
+          <div className="mb-6">
+            <p className="font-semibold mb-2 text-sm">Category</p>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600">
                 <input 
                   type="radio" 
                   name="category" 
-                  checked={selectedCategory === cat} 
-                  onChange={() => setSelectedCategory(cat)}
+                  checked={selectedCategory === 'All'} 
+                  onChange={() => setSelectedCategory('All')}
                   className="accent-black"
                 />
-                {cat}
+                All Categories
               </label>
-            ))}
+              {categories.map(cat => (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer hover:text-blue-600">
+                  <input 
+                    type="radio" 
+                    name="category" 
+                    checked={selectedCategory === cat} 
+                    onChange={() => setSelectedCategory(cat)}
+                    className="accent-black"
+                  />
+                  {cat}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Lọc theo giá */}
+          <div>
+            <p className="font-semibold mb-2 text-sm">Price range</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600 w-10">Min</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+                  placeholder="0"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600 w-10">Max</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+                  placeholder="Any"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* --- RIGHT CONTENT (LIST) --- */}
         <div className="flex-1">
-          <h1 className="text-2xl font-bold mb-6">
+          <h1 className="text-2xl font-bold mb-2">
             {urlSearch ? `Results for "${urlSearch}"` : 'Explore All Products'}
-            <span className="text-sm font-normal text-gray-500 ml-2">({filteredProducts.length} items)</span>
           </h1>
+          <p className="text-sm text-gray-500 mb-6">
+            Showing {filteredProducts.length} item{filteredProducts.length !== 1 ? 's' : ''} 
+            {minPrice || maxPrice || selectedCategory !== 'All' ? ' after filters' : ''}
+          </p>
 
           {loading ? (
              <div>Loading...</div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.map(renderProductCard)}
-            </div>
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {paginatedProducts.map(renderProductCard)}
+              </div>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={itemsPerPage}
+                totalItems={filteredProducts.length}
+                showInfo
+                itemsPerPageOptions={[30, 60, 120]}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                itemsLabel="products"
+              />
+            </>
           ) : (
             <div className="text-center py-10 text-gray-500">No products found based on your filter.</div>
           )}

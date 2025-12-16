@@ -2,8 +2,9 @@
 import React from 'react';
 
 // Nhận thêm props product và quantity
-const OrderSummary = ({ products, totalAmount, handleCheckout, isProcessing }) => {
-    
+const OrderSummary = ({ products, totalAmount, handleCheckout, isProcessing, discountAmount = 0, shippingFee = 15.0 }) => {
+    const subtotal = products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+    const finalTotal = parseFloat(totalAmount);
 
     return (
         <div className="order-summary-box">
@@ -27,9 +28,28 @@ const OrderSummary = ({ products, totalAmount, handleCheckout, isProcessing }) =
             
             <hr/>
             
+            <div className="summary-breakdown">
+                <div className="summary-row">
+                    <span>Tạm tính:</span>
+                    <span>US ${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="summary-row">
+                    <span>Phí vận chuyển:</span>
+                    <span>US ${shippingFee.toFixed(2)}</span>
+                </div>
+                {discountAmount > 0 && (
+                    <div className="summary-row" style={{ color: '#28a745' }}>
+                        <span>Giảm giá:</span>
+                        <span>- US ${discountAmount.toFixed(2)}</span>
+                    </div>
+                )}
+            </div>
+            
+            <hr/>
+            
             <div className="summary-total">
                 <strong>Tổng Cộng:</strong>
-                <strong className="total-price">US ${totalAmount}</strong>
+                <strong className="total-price">US ${finalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </div>
 
            <button 
