@@ -61,6 +61,19 @@ function NotificationBell() {
         };
     }, [isAuthenticated, fetchNotifications]);
 
+    const handleMarkAllAsRead = async () => {
+        const hasUnread = notifications.some(n => !n.isRead);
+        if (!hasUnread) return;
+
+        try {
+            await axios.put('/api/notifications/mark-all-read'); // Cần đảm bảo backend có route này
+            // Cập nhật toàn bộ danh sách thành đã đọc
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (err) {
+            console.error('Lỗi đánh dấu tất cả:', err);
+        }
+    };
+
     const handleMarkAsRead = async (id) => {
         const notificationToUpdate = notifications.find(n => n._id === id);
         if (!notificationToUpdate || notificationToUpdate.isRead) return;
@@ -136,7 +149,7 @@ function NotificationBell() {
                 <div className="absolute top-full right-0 z-50 w-[360px] bg-white border border-gray-200 rounded-lg shadow-xl mt-2 overflow-hidden">
                     <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <h3 className="font-bold text-gray-700">Notifications</h3>
-                        <Link to="/notifications" onClick={() => setIsOpen(false)} className="text-xs text-blue-600 hover:underline">View All</Link>
+                        <Link  onClick={(e) => { e.stopPropagation(); handleMarkAllAsRead(); }} className="text-xs text-blue-600 hover:underline">Mark as Read All</Link>
                     </div>
 
                     <div className="max-h-[400px] overflow-y-auto">

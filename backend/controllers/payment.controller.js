@@ -5,7 +5,8 @@ const Coupon = require('../models/Coupon.model');
 const axios = require('axios');
 const crypto = require("crypto");
 const Cart = require('../models/Cart.model');
-// @desc    Giả lập tạo URL thanh toán VNPay
+// Thêm import cho notification
+const { createNotificationInternal } = require('./notification.controller');
 // @route   POST /api/payment/vnpay
 // @access  Private
 exports.createVNPayPayment = async (req, res) => {
@@ -128,8 +129,13 @@ exports.createMomoPayment = async (req, res) => {
     const requestId = orderId;
 
     // ⚙️ 6. Tạo đơn hàng tạm thời (status: 'pending_payment')
+    // Lấy seller từ sản phẩm đầu tiên (giả sử tất cả cùng seller)
+    const firstProduct = await Product.findById(orderItems[0].product);
+    const sellerId = firstProduct ? firstProduct.seller : null;
+
     order = await Order.create({
       buyer: userId,
+      seller: sellerId,
       shippingAddress: shippingAddress,
       orderItems: orderItems.map(item => ({ 
         ...item, 
@@ -246,7 +252,7 @@ exports.returnData = async (req, res) => {
 
   const isMomoSuccess = resultCode === "0";
   const newOrderStatus = isMomoSuccess ? 'pending_confirmation' : 'cancelled';
-
+  
   try {
     const order = await Order.findById(localOrderId);
 
@@ -302,6 +308,13 @@ exports.returnData = async (req, res) => {
     await order.save(); // Lưu order với trạng thái cuối cùng
     
 
+    // Gửi notification nếu thanh toán thành công
+    if (isMomoSuccess) {
+        // Gửi cho buyer
+        const buyerMessage = `Đơn hàng #${order._id.toString().substring(0, 6)} đã được đặt thành công!`;
+        const buyerLink = `/orders/${order._id}`;
+        await createNotificationInternal(buyerId.toString(), buyerMessage, buyerLink); // Gọi không cần req
+    }
 
     return res.status(200).json({
       success: true,

@@ -76,11 +76,10 @@ const NotificationsPage = () => {
         }
     };
 
-    // const extractOrderId = (link) => {
-    //     if (!link) return null;
-    //     const parts = link.split('/');
-    //     return parts[parts.length - 1]; // Assumes ID is the last part
-    // };
+    const handleViewOrder = (noti) => {
+        handleMarkAsRead(noti._id);
+        handleNavigation(noti.link);
+    };
 
     const handleNavigation = (link) => {
         if (!link) return;
@@ -187,8 +186,8 @@ const NotificationsPage = () => {
                                     <div className="flex flex-col items-end gap-2 pl-4">
                                         {noti.link && (
                                             <button 
-                                                onClick={() => handleNavigation(noti)}
-                                                className="px-5 py-1.5 bg-white border border-blue-600 text-blue-600 rounded-full text-sm font-bold hover:bg-blue-700 hover:text-white transition-colors whitespace-nowrap"
+                                                onClick={() => handleViewOrder(noti)}
+                                                className="px-5 py-1.5 text-blue-600 border border-blue-600 rounded hover:bg-blue-700 hover:text-white transition-colors"
                                             >
                                                 View
                                             </button>
